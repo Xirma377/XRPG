@@ -72,6 +72,9 @@ const api = {
     refreshSettings: () => invoke('discord:refreshSettings'),
     broadcast: (kind, mediaId, opts) => invoke('discord:broadcast', kind, mediaId, opts),
     stopBroadcast: () => invoke('discord:stopBroadcast'),
+    liveStart: () => invoke('discord:liveStart'),
+    liveChunk: (chunk) => ipcRenderer.send('discord:liveChunk', chunk),
+    liveStop: () => invoke('discord:liveStop'),
     onEvent: (cb) => { const h = (_e, p) => cb(p); ipcRenderer.on('discord:event', h); return () => ipcRenderer.removeListener('discord:event', h); },
   },
 

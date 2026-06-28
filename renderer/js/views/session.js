@@ -609,12 +609,34 @@ function playScene(p) {
 
 // ---------- Discord panel ----------
 function attachRecording(working, r) {
-  if (!r || !r.ok) return;
-  working.discordRecordings = r.manifest || [];
-  working.discordMixdownMediaId = r.mixdown ? r.mixdown.mediaId : null;
-  working.discordMixdownUrl = r.mixdown ? r.mixdown.url : null;
-  if (r.mixdown && !working.audioMediaId) working.audioMediaId = r.mixdown.mediaId;
-  toast(`Recording saved: ${(r.manifest || []).length} track(s)`, { type: 'success' });
+  if (!r || !r.ok || !(r.manifest && r.manifest.length)) return;
+  working.discordRecordings = working.discordRecordings || [];
+  // Dedup: endSession and the recordingComplete event can both deliver the same
+  // result — skip if this recording (by its first track's mediaId) is already attached.
+  const firstId = r.manifest[0] && r.manifest[0].mediaId;
+  if (firstId && working.discordRecordings.some((t) => t.mediaId === firstId)) return;
+  // APPEND across record segments so ending+resuming a session keeps every recording.
+  working.discordRecordings = working.discordRecordings.concat(r.manifest);
+  if (r.mixdown) {
+    working.discordMixdowns = working.discordMixdowns || [];
+    working.discordMixdowns.push(r.mixdown);
+    working.discordMixdownUrl = r.mixdown.url;
+    working.discordMixdownMediaId = r.mixdown.mediaId;
+    if (!working.audioMediaId) working.audioMediaId = r.mixdown.mediaId;
+  }
+  toast(`Recording saved: ${r.manifest.length} track(s)`, { type: 'success' });
+}
+
+// Stop an active Discord recording and attach it to the session (used on End Session).
+async function stopDiscordRecordingIfActive(working) {
+  try {
+    const st = await window.xrpg.discord.status();
+    if (st && st.recording && st.recording.active) {
+      toast('Saving Discord recording…', { timeout: 4000 });
+      const r = await window.xrpg.discord.stopRecording({ mixdown: true });
+      attachRecording(working, r);
+    }
+  } catch (e) {}
 }
 
 function buildDiscord(working, campaign, sys, saveNotes) {
@@ -680,7 +702,7 @@ function buildDiscord(working, campaign, sys, saveNotes) {
     // In voice
     const vrow = el('div.row.between', { style: { alignItems: 'center' } });
     vrow.appendChild(el('span.small', '🔊 ' + (stat.voice.channelName || 'voice')));
-    vrow.appendChild(button('Leave', { size: 'sm', variant: 'ghost', onClick: async () => { await window.xrpg.discord.leaveVoice(); draw(); } }));
+    vrow.appendChild(button('Leave', { size: 'sm', variant: 'ghost', onClick: async () => { try { await import('../discord-broadcast.js').then((b) => b.stopAppBroadcast()); } catch (e) {} await window.xrpg.discord.leaveVoice(); draw(); } }));
     body.appendChild(vrow);
 
     // members + links
@@ -693,7 +715,8 @@ function buildDiscord(working, campaign, sys, saveNotes) {
       const dot = el('span', { style: { width: '8px', height: '8px', borderRadius: '50%', flex: 'none', background: m.speaking ? 'var(--good)' : 'var(--steel,#5a6c7e)' } });
       dotEls.set(m.id, dot);
       rowm.appendChild(dot);
-      rowm.appendChild(el('span.small', { style: { flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, title: m.displayName }, m.displayName));
+      const dn = m.displayName || m.username || m.id;
+      rowm.appendChild(el('span.small', { style: { flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, title: dn }, dn));
       const sel = select(opts, { value: linkValueFor(m.id), onChange: (v) => setLink(m.id, v) });
       sel.style.maxWidth = '120px';
       rowm.appendChild(sel);
@@ -752,23 +775,19 @@ function buildDiscord(working, campaign, sys, saveNotes) {
       body.appendChild(rsec);
     }
 
-    // broadcast ambience (Ogg/WAV play to the voice channel; mp3 needs ffmpeg)
-    const bsec = el('details', { style: { marginTop: '10px' } });
-    bsec.appendChild(el('summary.small.mute', 'Broadcast ambience to channel'));
-    try {
-      const man = await window.xrpg.audio.manifest();
-      const compat = (man.tracks || []).filter((t) => ['ogg', 'wav'].includes((t.ext || '').toLowerCase()));
-      if (!compat.length) bsec.appendChild(el('p.tiny.mute', 'No Ogg/WAV tracks available (MP3 needs ffmpeg on PATH).'));
-      else {
-        let pick = compat[0];
-        const bsel = select(compat.map((t) => ({ value: t.id, label: t.name })), { value: pick.id, onChange: (v) => { pick = compat.find((t) => t.id === v) || pick; } });
-        bsec.appendChild(field('Track', bsel));
-        const brow = el('div.row.gap-2');
-        brow.appendChild(button('Play to voice', { size: 'sm', onClick: async () => { try { const f = await window.xrpg.audio.fetch(pick); const name = (f.url || '').split('/').pop(); const r = await window.xrpg.discord.broadcast('library', name, { loop: true, volume: 0.5 }); if (!r || r.ok === false) toast('Broadcast failed: ' + (r && (r.detail || r.reason) || ''), { type: 'error' }); else toast('Broadcasting', { type: 'success' }); } catch (e) { toast('Broadcast failed: ' + e.message, { type: 'error' }); } } }));
-        brow.appendChild(button('Stop', { size: 'sm', variant: 'ghost', onClick: () => window.xrpg.discord.stopBroadcast() }));
-        bsec.appendChild(brow);
-      }
-    } catch (e) {}
+    // Broadcast the WHOLE app's audio (mixer + soundboard + everything) to the channel.
+    const bsec = el('div', { style: { marginTop: '12px', borderTop: '1px solid var(--line,#2a2f3a)', paddingTop: '10px' } });
+    const bb = await import('../discord-broadcast.js');
+    const on = bb.isBroadcasting();
+    bsec.appendChild(el('div.row.between', { style: { alignItems: 'center' } }, [
+      el('span.small', on ? '📢 Broadcasting app audio' : '📢 Broadcast app audio'),
+      button(on ? 'Stop' : 'Start', { size: 'sm', variant: on ? 'ghost' : 'primary', onClick: async () => {
+        if (bb.isBroadcasting()) { await bb.stopAppBroadcast(); toast('Broadcast stopped'); }
+        else { const r = await bb.startAppBroadcast(); if (!r || r.ok === false) toast('Broadcast failed: ' + (r && (r.detail || r.reason) || ''), { type: 'error' }); else toast('Players now hear the mixer & soundboard', { type: 'success' }); }
+        draw();
+      } }),
+    ]));
+    bsec.appendChild(el('p.tiny.mute', { style: { marginTop: '4px' } }, 'Plays everything this app produces (Mixer scenes, Audio Cues, soundboard) into the voice channel.'));
     body.appendChild(bsec);
   };
 
@@ -830,6 +849,8 @@ async function quickNpc(working, campaign, saveNow) {
 
 async function endSession(working, campaign) {
   if (!(await confirm({ title: 'End session?', message: 'Save and close this session? You can reopen it any time from the Session Log.', okLabel: 'End session' }))) return;
+  await stopDiscordRecordingIfActive(working); // stop + save the bot recording
+  try { await import('../discord-broadcast.js').then((b) => b.stopAppBroadcast()); } catch (e) {}
   if (rec && (rec.state === 'recording' || rec.state === 'paused')) { const blob = await rec.stop(); if (blob) { const saved = await rec.saveBlob(blob); working.audioMediaId = saved.id; working.transcript = rec.transcript || working.transcript; } }
   foldElapsed();
   if (rec) rec.reset();

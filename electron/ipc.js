@@ -210,6 +210,10 @@ function registerIpc({ ipcMain, store, ai, transcribe, updater, discord, getWind
     return dc.broadcastFile(p, opts);
   });
   handle('discord:stopBroadcast', () => (dc.stopBroadcast ? dc.stopBroadcast() : null));
+  // live app-audio broadcast (renderer captures master output → bot)
+  handle('discord:liveStart', () => (dc.liveBroadcastStart ? dc.liveBroadcastStart() : { ok: false, reason: 'unavailable' }));
+  ipcMain.on('discord:liveChunk', (_e, chunk) => { try { if (dc.liveBroadcastChunk) dc.liveBroadcastChunk(chunk); } catch (err) {} });
+  handle('discord:liveStop', () => (dc.liveBroadcastStop ? dc.liveBroadcastStop() : null));
 
   // ---- Auto-update ----
   handle('update:available', () => (updater ? updater.available() : false));

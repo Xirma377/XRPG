@@ -53,6 +53,9 @@ class Discord extends Emitter {
   refreshSettings() { return window.xrpg.discord.refreshSettings(); }
   broadcast(kind, mediaId, opts) { return window.xrpg.discord.broadcast(kind, mediaId, opts); }
   stopBroadcast() { return window.xrpg.discord.stopBroadcast(); }
+  liveStart() { return window.xrpg.discord.liveStart(); }
+  liveChunk(chunk) { return window.xrpg.discord.liveChunk(chunk); }
+  liveStop() { return window.xrpg.discord.liveStop(); }
 }
 
 export const discord = new Discord();

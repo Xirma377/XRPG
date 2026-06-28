@@ -47,7 +47,16 @@ export function openSessionWizard(working, campaign, saveNow) {
   // re-render the active step when Discord state changes
   ['status', 'members', 'voiceJoin', 'voiceLeave', 'recordingState'].forEach((ev) => offs.push(discord.on(ev, () => { if (state.mode) render(); })));
 
+  // Serialize renders: a burst of Discord events fires render() repeatedly; without
+  // this, concurrent async renders each append to the modal body → duplicated rows.
+  let rendering = false, renderAgain = false;
   async function render() {
+    if (rendering) { renderAgain = true; return; }
+    rendering = true;
+    try { await renderImpl(); } finally { rendering = false; if (renderAgain) { renderAgain = false; render(); } }
+  }
+
+  async function renderImpl() {
     const content = m.body; clear(content);
     if (!state.mode) { renderMode(content); m.setFooter(button('Cancel', { variant: 'ghost', onClick: () => m.close() })); return; }
     content.appendChild(el('div.tiny.mute', { style: { marginBottom: '10px', letterSpacing: '.04em' } }, `Step ${state.idx + 1} of ${state.seq.length} · ${TITLES[state.seq[state.idx]]}`));
@@ -113,8 +122,9 @@ export function openSessionWizard(working, campaign, saveNow) {
       const opts = [{ value: '', label: '— unlinked —' }, { value: 'gm', label: 'GM (me)' }].concat(playersForLink().map((p) => ({ value: p.id, label: p.name })));
       const list = el('div.col.gap-1');
       members.forEach((mem) => {
+        const dname = mem.displayName || mem.username || mem.id;
         const row = el('div.row.gap-2', { style: { alignItems: 'center' } });
-        row.appendChild(el('span', { style: { flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }, title: mem.displayName }, mem.displayName));
+        row.appendChild(el('span', { style: { flex: '1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: '600' }, title: dname }, '🎧 ' + dname));
         row.appendChild(select(opts, { value: linkValueFor(mem.id), onChange: (v) => setLink(mem.id, v) }));
         list.appendChild(row);
       });

@@ -16,6 +16,7 @@ const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
 const os = require('os');
+const { Readable } = require('stream');
 
 let dpkg = null; // discord.js
 let voice = null; // @discordjs/voice
@@ -51,6 +52,7 @@ let conn = null; // voice connection
 let reconnecting = false; // guards the Disconnected recovery race
 let voiceInfo = null; // { guildId, channelId, channelName }
 let player = null; // audio player for broadcast
+let liveStream = null; // Readable fed by the renderer's captured app audio (WebM/Opus)
 let speakingSet = new Set();
 let rec = null; // active recording state
 let pendingSlash = new Map(); // requestId -> { interaction, timer }
@@ -258,7 +260,7 @@ async function disconnect() {
 
 function displayNameOf(member) {
   if (!member) return 'Unknown';
-  return member.nickname || (member.user && (member.user.globalName || member.user.username)) || 'Unknown';
+  try { return member.displayName || member.nickname || (member.user && (member.user.globalName || member.user.username)) || 'Unknown'; } catch (e) { return 'Unknown'; }
 }
 
 function status() {
@@ -414,34 +416,45 @@ async function startRecording(sessionId, opts = {}) {
   return { ok: true, users: [...rec.users.values()].map((u) => ({ userId: u.userId, label: u.label })) };
 }
 
-function ensureUserCapture(userId, username) {
-  if (!rec || !conn) return;
-  if (rec.users.has(userId)) return;
-  // don't record the bot itself
-  if (botUser && userId === botUser.id) return;
-  const temp = path.join(rec.dir, userId + '.opus');
-  let ws;
-  try { ws = fs.createWriteStream(temp, { highWaterMark: 1 << 20 }); } catch (e) { log('temp open failed', e.message); return; }
-  ws.on('error', (e) => log('rec write error', e.message));
+// Subscribe to a user's Opus and append raw packets (+timestamps) to their write
+// stream. HOT PATH (≈50/sec/speaker): NO decode, NO sync I/O — decoding is deferred
+// to stopRecording so the main-process event loop (and voice heartbeat) is never blocked.
+function subscribeAndWrite(userId, u) {
   const stream = conn.receiver.subscribe(userId, { end: { behavior: voice.EndBehaviorType.Manual } });
-  const name = username || memberName(userId);
-  const u = { userId, username: name, stream, ws, temp, packets: 0, startOffsetMs: Date.now() - rec.t0, label: name };
-  rec.users.set(userId, u);
-  // HOT PATH (≈50/sec/speaker): NO decode, NO sync I/O — just buffer the raw Opus
-  // packet + timestamp to an async stream. Decoding is deferred to stopRecording so
-  // the main-process event loop (and the voice connection) is never blocked.
   stream.on('data', (packet) => {
-    if (!rec || !rec.users.has(userId) || !packet || !packet.length || packet.length > 0xffff) return;
+    // u.stream !== stream ⇒ this is a stale handler (user left/rejoined) — exit cleanly.
+    if (!rec || !rec.users.has(userId) || u.stream !== stream || !packet || !packet.length || packet.length > 0xffff) return;
     const out = Buffer.allocUnsafe(6 + packet.length);
     out.writeInt32LE(Math.max(0, Date.now() - rec.t0), 0);
     out.writeUInt16LE(packet.length, 4);
     packet.copy(out, 6);
-    // Honor backpressure so the write buffer can't grow unbounded under a disk stall
-    // (which would cause GC pauses that starve the voice heartbeat).
-    if (!ws.write(out)) { try { stream.pause(); ws.once('drain', () => { try { stream.resume(); } catch (e) {} }); } catch (e) {} }
+    // Honor backpressure so the write buffer can't grow unbounded under a disk stall.
+    if (!u.ws.write(out)) { try { stream.pause(); u.ws.once('drain', () => { try { stream.resume(); } catch (e) {} }); } catch (e) {} }
     u.packets++;
   });
   stream.on('error', () => {});
+  return stream;
+}
+
+function ensureUserCapture(userId, username) {
+  if (!rec || !conn) return;
+  // don't record the bot itself
+  if (botUser && userId === botUser.id) return;
+  const existing = rec.users.get(userId);
+  if (existing) {
+    // user rejoined after leaving — resume capture into the SAME file (the gap shows
+    // as silence in the mixdown). Their player link persists, so they're still linked.
+    if (!existing.stream) { try { existing.stream = subscribeAndWrite(userId, existing); log('resumed capture', userId, existing.label); } catch (e) { log('resume failed', e.message); } }
+    return;
+  }
+  const temp = path.join(rec.dir, userId + '.opus');
+  let ws;
+  try { ws = fs.createWriteStream(temp, { highWaterMark: 1 << 20 }); } catch (e) { log('temp open failed', e.message); return; }
+  ws.on('error', (e) => log('rec write error', e.message));
+  const name = username || memberName(userId);
+  const u = { userId, username: name, stream: null, ws, temp, packets: 0, startOffsetMs: Date.now() - rec.t0, label: name };
+  rec.users.set(userId, u);
+  u.stream = subscribeAndWrite(userId, u);
   log('capturing', userId, u.label);
 }
 
@@ -735,7 +748,45 @@ async function setPresence(text) {
 // ---------------------------------------------------------------------------
 
 function stopBroadcast() {
+  if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+}
+
+// ---------------------------------------------------------------------------
+// Live broadcast: the renderer captures the WHOLE app audio output (mixer +
+// soundboard + everything) as WebM/Opus and streams chunks here; we feed them
+// straight to Discord. Covers every format — no ffmpeg, no per-file decoding.
+// ---------------------------------------------------------------------------
+
+function liveBroadcastStart() {
+  if (!conn || !voiceInfo) return { ok: false, reason: 'not-in-voice' };
+  if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
+  try {
+    liveStream = new Readable({ read() {} });
+    liveStream.on('error', (e) => { log('liveStream error', e && e.message); }); // never let a stream error crash main
+    const resource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.WebmOpus });
+    if (!player) { player = voice.createAudioPlayer(); conn.subscribe(player); }
+    player.removeAllListeners(voice.AudioPlayerStatus.Idle);
+    player.play(resource);
+    return { ok: true };
+  } catch (e) { liveStream = null; return { ok: false, reason: 'failed', detail: e.message }; }
+}
+
+function liveBroadcastChunk(chunk) {
+  // Guard against push-after-EOF (a late chunk arriving after stop) — that would emit
+  // an async error event and, without a handler, crash the main process.
+  if (!liveStream || liveStream.readableEnded || liveStream.destroyed || !chunk) return false;
+  // Safety cap: if Discord stalls and the buffer balloons, abandon the broadcast
+  // rather than grow unbounded (can't drop individual chunks — it'd corrupt the WebM).
+  if (liveStream.readableLength > 8 * 1024 * 1024) { liveBroadcastStop(); return false; }
+  try { liveStream.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); } catch (e) {}
+  return true;
+}
+
+function liveBroadcastStop() {
+  if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
+  if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+  return { ok: true };
 }
 
 // Peek the Ogg header to distinguish Opus (playable) from Vorbis (needs ffmpeg).
@@ -788,7 +839,6 @@ async function broadcastFile(filePath, opts = {}) {
 
 // Encode a 16-bit PCM WAV (passed as a Buffer) into an Opus packet stream for Discord
 // (opusscript). Returns null for anything that isn't a readable PCM16 WAV.
-const { Readable } = require('stream');
 function wavToOpusStream(buf) {
   if (!buf || buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE') return null;
   let off = 12, dataOff = -1, dataLen = 0, rate = 48000, ch = 1, bits = 16;
@@ -841,6 +891,7 @@ module.exports = {
   startRecording, stopRecording, transcribeRecording,
   postMessage, setPresence,
   slashReply, broadcastFile, stopBroadcast,
+  liveBroadcastStart, liveBroadcastChunk, liveBroadcastStop,
   refreshSettings: async () => { cachedSettings = (deps.store ? await deps.store.getSettings() : {}) || {}; if (ready && cachedSettings.discordSlashCommands !== false) registerCommands().catch(() => {}); return { ok: true }; },
   getMembers: () => currentMembers(),
   // exported for offline tests of the audio pipeline (no Discord connection needed)
