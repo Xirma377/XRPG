@@ -639,7 +639,7 @@ function buildDiscord(working, campaign, sys, saveNotes) {
     else if (value) { const p = store.get('players', value); if (p) { p.discordUserId = memberId; await store.save('players', p); } }
   };
 
-  const draw = async () => {
+  const drawImpl = async () => {
     clear(body); dotEls.clear();
     let avail = false; try { avail = await window.xrpg.discord.available(); } catch (e) {}
     if (!avail) { body.appendChild(el('p.small.mute', 'Discord unavailable in this build.')); return; }
@@ -765,6 +765,15 @@ function buildDiscord(working, campaign, sys, saveNotes) {
       }
     } catch (e) {}
     body.appendChild(bsec);
+  };
+
+  // Serialize redraws: a burst of events (voiceJoin/status/members) must not run
+  // concurrent async draws, or the member list gets appended multiple times.
+  let drawing = false, drawAgain = false;
+  const draw = async () => {
+    if (drawing) { drawAgain = true; return; }
+    drawing = true;
+    try { await drawImpl(); } finally { drawing = false; if (drawAgain) { drawAgain = false; draw(); } }
   };
 
   draw();

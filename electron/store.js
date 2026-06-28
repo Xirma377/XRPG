@@ -372,7 +372,7 @@ module.exports = {
   getSettings, setSettings,
   getSecret, setSecret, hasSecret,
   list, get, put, remove,
-  saveMedia, readMedia, deleteMedia,
+  saveMedia, readMedia, deleteMedia, safeMediaPath,
   audioManifest, audioCachedIds, audioFetch, audioForget,
   exportAll, importAll, exportDoc,
   reseed,
