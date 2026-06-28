@@ -20,11 +20,13 @@ const os = require('os');
 let dpkg = null; // discord.js
 let voice = null; // @discordjs/voice
 let OpusScript = null;
+let prism = null; // prism-media (ogg/webm opus demuxers, for broadcast)
 let depError = null;
 try {
   dpkg = require('discord.js');
   voice = require('@discordjs/voice');
   OpusScript = require('opusscript');
+  prism = require('prism-media');
 } catch (e) {
   depError = e.message;
 }
@@ -151,6 +153,12 @@ function wireClient() {
     // if a new non-bot user joined while recording, capture them
     if (rec && newS.channelId === voiceInfo.channelId && newS.member && !newS.member.user.bot) {
       ensureUserCapture(newS.id, displayNameOf(newS.member));
+    }
+    // if a user LEFT our channel mid-recording, free their live receiver subscription
+    // (what they said is still buffered + saved at stop). Prevents stream/fd accumulation.
+    if (rec && oldS.channelId === voiceInfo.channelId && newS.channelId !== voiceInfo.channelId) {
+      const u = rec.users.get(newS.id);
+      if (u && u.stream) { try { u.stream.destroy(); } catch (e) {} u.stream = null; }
     }
     send('members', { channelId: voiceInfo.channelId, members: currentMembers() });
   });
@@ -411,27 +419,58 @@ function ensureUserCapture(userId, username) {
   if (rec.users.has(userId)) return;
   // don't record the bot itself
   if (botUser && userId === botUser.id) return;
-  let decoder;
-  try { decoder = new OpusScript(IN_RATE, IN_CH, OpusScript.Application.AUDIO); } catch (e) { log('decoder create failed', e.message); return; }
-  const temp = path.join(rec.dir, userId + '.pcmt');
-  let fd;
-  try { fd = fs.openSync(temp, 'w'); } catch (e) { log('temp open failed', e.message); try { decoder.delete(); } catch (_) {} return; }
+  const temp = path.join(rec.dir, userId + '.opus');
+  let ws;
+  try { ws = fs.createWriteStream(temp, { highWaterMark: 1 << 20 }); } catch (e) { log('temp open failed', e.message); return; }
+  ws.on('error', (e) => log('rec write error', e.message));
   const stream = conn.receiver.subscribe(userId, { end: { behavior: voice.EndBehaviorType.Manual } });
-  const u = { userId, username: username || memberName(userId), decoder, stream, temp, fd, frames: 0, startOffsetMs: Date.now() - rec.t0, label: username || memberName(userId) };
+  const name = username || memberName(userId);
+  const u = { userId, username: name, stream, ws, temp, packets: 0, startOffsetMs: Date.now() - rec.t0, label: name };
   rec.users.set(userId, u);
+  // HOT PATH (≈50/sec/speaker): NO decode, NO sync I/O — just buffer the raw Opus
+  // packet + timestamp to an async stream. Decoding is deferred to stopRecording so
+  // the main-process event loop (and the voice connection) is never blocked.
   stream.on('data', (packet) => {
-    if (!rec || !rec.users.has(userId)) return;
-    let pcm;
-    try { pcm = decoder.decode(packet); } catch (e) { return; }
-    if (!pcm || pcm.length < FRAME_SAMPLES * IN_CH * 2) return;
-    const mono16 = downmixDecimate(pcm);
-    const rmsBuf = Buffer.allocUnsafe(REC_BYTES);
-    rmsBuf.writeInt32LE(Math.max(0, Date.now() - rec.t0), 0);
-    mono16.copy(rmsBuf, 4);
-    try { fs.writeSync(fd, rmsBuf); u.frames++; } catch (e) {}
+    if (!rec || !rec.users.has(userId) || !packet || !packet.length || packet.length > 0xffff) return;
+    const out = Buffer.allocUnsafe(6 + packet.length);
+    out.writeInt32LE(Math.max(0, Date.now() - rec.t0), 0);
+    out.writeUInt16LE(packet.length, 4);
+    packet.copy(out, 6);
+    // Honor backpressure so the write buffer can't grow unbounded under a disk stall
+    // (which would cause GC pauses that starve the voice heartbeat).
+    if (!ws.write(out)) { try { stream.pause(); ws.once('drain', () => { try { stream.resume(); } catch (e) {} }); } catch (e) {} }
+    u.packets++;
   });
   stream.on('error', () => {});
   log('capturing', userId, u.label);
+}
+
+// Deferred decode (runs once, at stop): raw [tMs|len|opus] records -> decoded
+// fixed-size [tMs|mono16k] records that readTempToWav/buildMixdown understand.
+function decodeUserRecording(rawTemp, decodedTemp) {
+  let raw; try { raw = fs.readFileSync(rawTemp); } catch (e) { return 0; }
+  let dec; try { dec = new OpusScript(IN_RATE, IN_CH, OpusScript.Application.AUDIO); } catch (e) { return 0; }
+  let out; try { out = fs.openSync(decodedTemp, 'w'); } catch (e) { try { dec.delete(); } catch (_) {} return 0; }
+  let frames = 0, off = 0;
+  const recBuf = Buffer.allocUnsafe(REC_BYTES);
+  try {
+    while (off + 6 <= raw.length) {
+      const tMs = raw.readInt32LE(off);
+      const len = raw.readUInt16LE(off + 4);
+      off += 6;
+      if (len <= 0 || off + len > raw.length) break;
+      const packet = raw.subarray(off, off + len);
+      off += len;
+      let pcm; try { pcm = dec.decode(packet); } catch (e) { continue; }
+      if (!pcm || pcm.length < FRAME_SAMPLES * IN_CH * 2) continue;
+      const mono16 = downmixDecimate(pcm);
+      recBuf.writeInt32LE(tMs, 0);
+      mono16.copy(recBuf, 4);
+      fs.writeSync(out, recBuf);
+      frames++;
+    }
+  } finally { try { fs.closeSync(out); } catch (e) {} try { dec.delete(); } catch (e) {} }
+  return frames;
 }
 
 // stereo int16 @48k (960 frames) -> mono int16 @16k (320 samples) Buffer
@@ -460,24 +499,28 @@ async function stopRecording(opts = {}) {
   rec = null; // stop accepting frames
   send('recordingState', { active: false });
 
-  // tear down per-user streams/decoders/fds
-  for (const u of cur.users.values()) {
+  // stop streams and flush each user's raw-opus write stream to disk
+  await Promise.all([...cur.users.values()].map((u) => new Promise((resolve) => {
     try { u.stream && u.stream.destroy(); } catch (e) {}
-    try { fs.closeSync(u.fd); } catch (e) {}
-    try { u.decoder && u.decoder.delete(); } catch (e) {}
-  }
+    if (!u.ws) return resolve();
+    try { u.ws.end(() => resolve()); u.ws.on('error', () => resolve()); } catch (e) { resolve(); }
+  })));
 
   if (cachedSettings.discordConsentNotice !== false) {
     const tc = cachedSettings.discordTextChannelId;
     if (tc) postMessage(tc, '⏹️ Session recording stopped.').catch(() => {});
   }
 
-  // build per-user WAVs + manifest
+  // Decode (deferred from the live path) → per-user WAV + manifest
   const manifest = [];
   const tmsByUser = {};
+  const decodedTemps = [];
   for (const u of cur.users.values()) {
     try {
-      const { wavBuf, tms, durationMs } = readTempToWav(u.temp, u.frames);
+      const decodedTemp = path.join(cur.dir, u.userId + '.dec');
+      const frames = decodeUserRecording(u.temp, decodedTemp);
+      if (!frames) continue;
+      const { wavBuf, tms, durationMs } = readTempToWav(decodedTemp, frames);
       if (!wavBuf || !wavBuf.length || tms.length === 0) continue;
       const link = cur.linkMap[u.userId] || {};
       const label = link.label || u.label || u.username || u.userId;
@@ -496,15 +539,15 @@ async function stopRecording(opts = {}) {
         startOffsetMs: tms.length ? tms[0] : 0,
       });
       tmsByUser[u.userId] = { tms, mediaId: saved.id, label };
-    } catch (e) { log('save user track failed', e.message); }
+      decodedTemps.push({ temp: decodedTemp, frames });
+    } catch (e) { log('process user track failed', e.message); }
   }
 
-  // best-effort time-aligned mixdown
+  // best-effort time-aligned mixdown (from the decoded temps)
   let mixdown = null;
-  if (opts.mixdown !== false && manifest.length) {
+  if (opts.mixdown !== false && decodedTemps.length) {
     try {
-      const temps = [...cur.users.values()].filter((u) => manifest.find((m) => m.userId === u.userId)).map((u) => ({ temp: u.temp, frames: u.frames }));
-      const wavBuf = buildMixdown(temps, (pct) => send('mixdownProgress', { percent: pct }));
+      const wavBuf = buildMixdown(decodedTemps, (pct) => send('mixdownProgress', { percent: pct }));
       if (wavBuf && wavBuf.length > 44) {
         const saved = await deps.store.saveMedia('audio', 'mixdown.wav', wavBuf);
         mixdown = { mediaId: saved.id, url: saved.url, bytes: saved.bytes };
@@ -512,8 +555,12 @@ async function stopRecording(opts = {}) {
     } catch (e) { log('mixdown failed', e.message); }
   }
 
-  // cleanup temp dir
-  try { for (const u of cur.users.values()) { try { fs.unlinkSync(u.temp); } catch (e) {} } fs.rmdirSync(cur.dir); } catch (e) {}
+  // cleanup temp dir (raw + decoded)
+  try {
+    for (const u of cur.users.values()) { try { fs.unlinkSync(u.temp); } catch (e) {} }
+    for (const d of decodedTemps) { try { fs.unlinkSync(d.temp); } catch (e) {} }
+    fs.rmdirSync(cur.dir);
+  } catch (e) {}
 
   // keep last recording timing in memory for transcription interleave
   lastRecording = { sessionId: cur.sessionId, manifest, mixdown, tmsByUser, durationMs: maxDuration(tmsByUser) };
@@ -680,12 +727,26 @@ async function setPresence(text) {
 }
 
 // ---------------------------------------------------------------------------
-// Audio broadcast (play a file to the voice channel) — no ffmpeg
-// Supports Ogg/Opus & WebM/Opus natively; WAV is encoded via opusscript.
+// Audio broadcast (play a file to the voice channel) — NO ffmpeg.
+// We feed Discord raw Opus packets directly: Ogg/Opus & WebM/Opus are demuxed
+// (prism), WAV is decoded + opus-encoded (opusscript). Anything else (mp3, flac,
+// Ogg/Vorbis) needs ffmpeg, which we don't bundle — those are rejected cleanly
+// instead of letting @discordjs/voice fall back to a missing ffmpeg.
 // ---------------------------------------------------------------------------
 
 function stopBroadcast() {
-  if (player) { try { player.stop(true); } catch (e) {} player = null; }
+  if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+}
+
+// Peek the Ogg header to distinguish Opus (playable) from Vorbis (needs ffmpeg).
+function isOggOpus(filePath) {
+  try {
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.allocUnsafe(256);
+    const n = fs.readSync(fd, buf, 0, 256, 0);
+    fs.closeSync(fd);
+    return buf.subarray(0, n).includes('OpusHead');
+  } catch (e) { return false; }
 }
 
 async function broadcastFile(filePath, opts = {}) {
@@ -694,59 +755,79 @@ async function broadcastFile(filePath, opts = {}) {
   let resource;
   try {
     if (ext === '.ogg' || ext === '.opus') {
-      resource = voice.createAudioResource(fs.createReadStream(filePath), { inputType: voice.StreamType.OggOpus, inlineVolume: true });
+      if (!prism || !isOggOpus(filePath)) return { ok: false, reason: 'needs-ffmpeg', detail: 'This file is Ogg/Vorbis (not Opus). Broadcasting it needs ffmpeg on PATH; use a WAV or Opus file instead.' };
+      const demux = fs.createReadStream(filePath).pipe(new prism.opus.OggDemuxer());
+      demux.on('error', (e) => { log('ogg demux error', e.message); stopBroadcast(); });
+      resource = voice.createAudioResource(demux, { inputType: voice.StreamType.Opus });
     } else if (ext === '.webm') {
-      resource = voice.createAudioResource(fs.createReadStream(filePath), { inputType: voice.StreamType.WebmOpus, inlineVolume: true });
+      if (!prism) return { ok: false, reason: 'needs-ffmpeg', detail: 'WebM broadcast requires prism-media.' };
+      const demux = fs.createReadStream(filePath).pipe(new prism.opus.WebmDemuxer());
+      demux.on('error', (e) => { log('webm demux error', e.message); stopBroadcast(); });
+      resource = voice.createAudioResource(demux, { inputType: voice.StreamType.Opus });
     } else if (ext === '.wav') {
-      resource = voice.createAudioResource(wavToOpusStream(filePath), { inputType: voice.StreamType.Opus, inlineVolume: false });
+      let buf;
+      try {
+        const st = await fsp.stat(filePath);
+        if (st.size > 120 * 1024 * 1024) return { ok: false, reason: 'too-large', detail: 'WAV is over 120 MB; convert to Ogg/Opus to broadcast.' };
+        buf = await fsp.readFile(filePath); // async — never blocks the voice heartbeat
+      } catch (e) { return { ok: false, reason: 'read-failed', detail: e.message }; }
+      const stream = wavToOpusStream(buf);
+      if (!stream) return { ok: false, reason: 'bad-wav', detail: 'Not a readable 16-bit PCM WAV file.' };
+      resource = voice.createAudioResource(stream, { inputType: voice.StreamType.Opus });
     } else {
-      return { ok: false, reason: 'unsupported-format', detail: ext + ' needs ffmpeg; use Ogg/Opus or WAV' };
+      return { ok: false, reason: 'unsupported-format', detail: ext + ' needs ffmpeg; use an Ogg/Opus or WAV file' };
     }
   } catch (e) { return { ok: false, reason: 'resource-failed', detail: e.message }; }
   if (!player) { player = voice.createAudioPlayer(); conn.subscribe(player); }
-  if (resource.volume && opts.volume != null) resource.volume.setVolume(opts.volume);
+  player.removeAllListeners(voice.AudioPlayerStatus.Idle); // avoid stacking loop handlers
   player.play(resource);
-  if (opts.loop) player.on(voice.AudioPlayerStatus.Idle, () => { broadcastFile(filePath, opts).catch(() => {}); });
+  // once() so a failed re-broadcast can't leave a stale Idle listener firing in a livelock
+  if (opts.loop) player.once(voice.AudioPlayerStatus.Idle, () => { broadcastFile(filePath, opts).catch(() => {}); });
   return { ok: true };
 }
 
-// Encode a WAV (PCM) file into an Opus packet stream for Discord (opusscript).
+// Encode a 16-bit PCM WAV (passed as a Buffer) into an Opus packet stream for Discord
+// (opusscript). Returns null for anything that isn't a readable PCM16 WAV.
 const { Readable } = require('stream');
-function wavToOpusStream(filePath) {
-  const buf = fs.readFileSync(filePath);
-  // find 'data' chunk
-  let off = 12; let dataOff = 44; let dataLen = buf.length - 44; let rate = 48000; let ch = 1; let bits = 16;
+function wavToOpusStream(buf) {
+  if (!buf || buf.length < 44 || buf.toString('ascii', 0, 4) !== 'RIFF' || buf.toString('ascii', 8, 12) !== 'WAVE') return null;
+  let off = 12, dataOff = -1, dataLen = 0, rate = 48000, ch = 1, bits = 16;
   while (off + 8 <= buf.length) {
     const id = buf.toString('ascii', off, off + 4);
     const sz = buf.readUInt32LE(off + 4);
-    if (id === 'fmt ') { ch = buf.readUInt16LE(off + 10); rate = buf.readUInt32LE(off + 12); bits = buf.readUInt16LE(off + 22); }
-    else if (id === 'data') { dataOff = off + 8; dataLen = sz; break; }
+    if (id === 'fmt ' && off + 24 <= buf.length) { ch = buf.readUInt16LE(off + 10) || 1; rate = buf.readUInt32LE(off + 12) || 48000; bits = buf.readUInt16LE(off + 22) || 16; }
+    else if (id === 'data') { dataOff = off + 8; dataLen = Math.min(sz, buf.length - dataOff); break; }
     off += 8 + sz + (sz & 1);
   }
+  if (dataOff < 0 || dataLen <= 0 || bits !== 16) return null;
   const enc = new OpusScript(48000, 2, OpusScript.Application.AUDIO);
   const FR = 960; // 20ms @48k stereo
-  // Build interleaved-stereo 48k int16 from source, resampling by nearest if needed
-  const samples = Math.floor(dataLen / (bits / 8) / ch);
+  const bps = (bits / 8) * ch; // bytes per source sample-frame
+  const samples = Math.floor(dataLen / bps);
   const out = new Readable({ read() {} });
+  let done = false;
+  const cleanup = () => { if (done) return; done = true; try { enc.delete(); } catch (e) {} };
+  out.on('close', cleanup); // free the encoder if playback is stopped/abandoned
   let s = 0;
   const pump = () => {
+    if (done) return;
     let pushed = 0;
-    while (s < samples && pushed < 50) {
+    while (s < samples && pushed < 15) { // small batches so encoding never blocks the loop for long
       const frame = Buffer.allocUnsafe(FR * 2 * 2); // stereo int16
       for (let i = 0; i < FR; i++) {
-        const srcIdx = Math.floor(((s + i) / 48000) * rate);
+        const srcIdx = Math.floor(((s + i) / 48000) * rate); // map 48k output sample -> source sample
         let l = 0, r = 0;
         if (srcIdx < samples) {
-          const base = dataOff + srcIdx * ch * (bits / 8);
-          l = bits === 16 ? buf.readInt16LE(base) : 0;
-          r = ch > 1 && bits === 16 ? buf.readInt16LE(base + 2) : l;
+          const base = dataOff + srcIdx * bps;
+          if (base + 2 <= buf.length) l = buf.readInt16LE(base);
+          r = (ch > 1 && base + 4 <= buf.length) ? buf.readInt16LE(base + 2) : l;
         }
         frame.writeInt16LE(l, i * 4); frame.writeInt16LE(r, i * 4 + 2);
       }
       try { out.push(enc.encode(frame, FR)); } catch (e) {}
       s += FR; pushed++;
     }
-    if (s >= samples) { try { enc.delete(); } catch (e) {} out.push(null); }
+    if (s >= samples) { cleanup(); out.push(null); }
     else setImmediate(pump);
   };
   pump();
@@ -763,5 +844,5 @@ module.exports = {
   refreshSettings: async () => { cachedSettings = (deps.store ? await deps.store.getSettings() : {}) || {}; if (ready && cachedSettings.discordSlashCommands !== false) registerCommands().catch(() => {}); return { ok: true }; },
   getMembers: () => currentMembers(),
   // exported for offline tests of the audio pipeline (no Discord connection needed)
-  _test: { downmixDecimate, wavFromPcm, buildMixdown, readTempToWav, REC_BYTES, OUT_FRAME, OUT_RATE, FRAME_SAMPLES, IN_CH },
+  _test: { downmixDecimate, wavFromPcm, buildMixdown, readTempToWav, decodeUserRecording, REC_BYTES, OUT_FRAME, OUT_RATE, FRAME_SAMPLES, IN_CH },
 };

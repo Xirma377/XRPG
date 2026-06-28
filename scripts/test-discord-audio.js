@@ -77,5 +77,42 @@ const ok = (name, cond, detail) => { if (cond) { pass++; } else { fail++; consol
   try { fs.unlinkSync(aFile); fs.unlinkSync(bFile); fs.rmdirSync(dir); } catch (e) {}
 })();
 
+// 4. deferred-decode round trip: raw [tMs|len|opus] -> decodeUserRecording -> decoded frames
+(() => {
+  const OpusScript = require('../node_modules/opusscript');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xrpg-decode-'));
+  const rawTemp = path.join(dir, 'u.opus');
+  const decTemp = path.join(dir, 'u.dec');
+  const enc = new OpusScript(48000, 2, OpusScript.Application.AUDIO);
+  const FR = 960; // 20ms @48k stereo
+  const fd = fs.openSync(rawTemp, 'w');
+  const PACKETS = 5;
+  for (let p = 0; p < PACKETS; p++) {
+    // a non-silent stereo frame so decode produces real samples
+    const frame = Buffer.alloc(FR * 2 * 2);
+    for (let i = 0; i < FR; i++) { const v = ((i + p) % 200) * 30 - 3000; frame.writeInt16LE(v, i * 4); frame.writeInt16LE(v, i * 4 + 2); }
+    const packet = enc.encode(frame, FR);
+    const head = Buffer.allocUnsafe(6);
+    head.writeInt32LE(p * 20, 0);            // 20ms apart
+    head.writeUInt16LE(packet.length, 4);
+    fs.writeSync(fd, head); fs.writeSync(fd, packet);
+  }
+  fs.closeSync(fd); try { enc.delete(); } catch (e) {}
+
+  const frames = T.decodeUserRecording(rawTemp, decTemp);
+  ok('decodeUserRecording: frame per packet', frames === PACKETS, frames + '/' + PACKETS);
+  const r = T.readTempToWav(decTemp, frames);
+  ok('decoded: tms preserved & spaced 20ms', r.tms.length === PACKETS && r.tms[0] === 0 && r.tms[PACKETS - 1] === (PACKETS - 1) * 20);
+  ok('decoded: WAV is mono16k 16-bit of right length', r.wavBuf.length === 44 + PACKETS * T.OUT_FRAME * 2);
+  // truncated / garbage trailer must not crash or add frames
+  fs.appendFileSync(rawTemp, Buffer.from([0, 0, 0, 0, 50, 0])); // a header claiming 50 bytes with no body
+  const frames2 = T.decodeUserRecording(rawTemp, decTemp);
+  ok('decodeUserRecording: ignores truncated trailing record', frames2 === PACKETS, String(frames2));
+
+  try { fs.unlinkSync(rawTemp); fs.unlinkSync(decTemp); fs.rmdirSync(dir); } catch (e) {}
+})();
+
 console.log(`[discord-audio] ${pass} passed, ${fail} failed`);
-process.exit(fail ? 1 : 0);
+// Exit gracefully (process.exitCode, not process.exit) so libuv can close the
+// opusscript WASM handles cleanly instead of asserting on an abrupt teardown.
+process.exitCode = fail ? 1 : 0;

@@ -330,7 +330,13 @@ async function runShot() {
       const [hashRoute, tabLabel] = route.split('@');
       await mainWindow.webContents.executeJavaScript(`location.hash = '#/${hashRoute}';`);
       await new Promise((r) => setTimeout(r, route === routes[0] ? 1400 : 1100));
-      if (tabLabel && tabLabel[0] === '^') {
+      if (tabLabel && tabLabel[0] === '!') {
+        // click any button/element whose visible text includes this label
+        const needle = tabLabel.slice(1).toLowerCase();
+        const hit = await mainWindow.webContents.executeJavaScript(`(() => { const els = Array.from(document.querySelectorAll('button, .btn, a')); const t = els.find(e => e.textContent.trim().toLowerCase().includes(${JSON.stringify(needle)})); if (t) { t.click(); return true; } return false; })();`);
+        console.log('[shot] click', needle, '→', hit);
+        await new Promise((r) => setTimeout(r, 900));
+      } else if (tabLabel && tabLabel[0] === '^') {
         // scroll an element matching text into view (^Some Heading)
         const needle = tabLabel.slice(1).toLowerCase();
         await mainWindow.webContents.executeJavaScript(`(() => { const els = Array.from(document.querySelectorAll('h4,h3,.side-card')); const t = els.find(e => e.textContent.trim().toLowerCase().includes(${JSON.stringify(needle)})); if (t) t.scrollIntoView({block:'center'}); return !!t; })();`);
