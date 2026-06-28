@@ -53,6 +53,8 @@ let reconnecting = false; // guards the Disconnected recovery race
 let voiceInfo = null; // { guildId, channelId, channelName }
 let player = null; // audio player for broadcast
 let liveStream = null; // Readable fed by the renderer's captured app audio (WebM/Opus)
+let liveResource = null, livePlaying = false, liveChunkCount = 0;
+const LIVE_PREBUFFER_CHUNKS = 5; // ~500ms jitter buffer before playback (chunks are ~100ms)
 let speakingSet = new Set();
 let rec = null; // active recording state
 let pendingSlash = new Map(); // requestId -> { interaction, timer }
@@ -760,6 +762,7 @@ function ensurePlayer() {
 
 function stopBroadcast() {
   if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
+  liveResource = null; livePlaying = false; liveChunkCount = 0;
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
   send('broadcastState', { status: 'idle' });
 }
@@ -772,15 +775,15 @@ function stopBroadcast() {
 
 function liveBroadcastStart() {
   if (!conn || !voiceInfo) return { ok: false, reason: 'not-in-voice' };
-  if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
+  liveBroadcastStop();
   try {
     liveStream = new Readable({ read() {} });
     liveStream.on('error', (e) => { log('liveStream error', e && e.message); }); // never let a stream error crash main
-    const resource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.WebmOpus });
+    liveResource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.WebmOpus });
     ensurePlayer();
-    player.play(resource);
-    return { ok: true };
-  } catch (e) { liveStream = null; return { ok: false, reason: 'failed', detail: e.message }; }
+    livePlaying = false; liveChunkCount = 0;
+    return { ok: true }; // playback starts once the jitter buffer fills (see liveBroadcastChunk)
+  } catch (e) { liveStream = null; liveResource = null; return { ok: false, reason: 'failed', detail: e.message }; }
 }
 
 function liveBroadcastChunk(chunk) {
@@ -791,12 +794,20 @@ function liveBroadcastChunk(chunk) {
   // rather than grow unbounded (can't drop individual chunks — it'd corrupt the WebM).
   if (liveStream.readableLength > 8 * 1024 * 1024) { liveBroadcastStop(); return false; }
   try { liveStream.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); } catch (e) {}
+  // Build a jitter cushion before starting playback, so the player always has frames
+  // ready and the audio doesn't stutter / cut in and out.
+  if (!livePlaying && liveResource && player) {
+    liveChunkCount++;
+    if (liveChunkCount >= LIVE_PREBUFFER_CHUNKS) { livePlaying = true; player.play(liveResource); }
+  }
   return true;
 }
 
 function liveBroadcastStop() {
   if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
+  liveResource = null; livePlaying = false; liveChunkCount = 0;
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+  send('broadcastState', { status: 'idle' });
   return { ok: true };
 }
 
