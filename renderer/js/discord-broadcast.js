@@ -30,7 +30,7 @@ export async function startAppBroadcast() {
       try { const ab = await e.data.arrayBuffer(); discord.liveChunk(new Uint8Array(ab)); } catch (err) {}
     };
     recorder.onerror = () => { stopAppBroadcast(); };
-    recorder.start(250); // 250ms chunks → ~0.25s latency
+    recorder.start(100); // 100ms chunks → smoother feed, smaller gaps
     active = true;
     return { ok: true };
   } catch (e) {

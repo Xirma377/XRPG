@@ -747,9 +747,21 @@ async function setPresence(text) {
 // instead of letting @discordjs/voice fall back to a missing ffmpeg.
 // ---------------------------------------------------------------------------
 
+// Fresh audio player subscribed to the CURRENT connection, configured so it doesn't
+// stop on brief frame gaps (chunked live streams) and reports its state to the UI.
+function ensurePlayer() {
+  if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+  player = voice.createAudioPlayer({ behaviors: { noSubscriber: voice.NoSubscriberBehavior.Play, maxMissedFrames: Number.MAX_SAFE_INTEGER } });
+  player.on('stateChange', (o, n) => { if (o.status !== n.status) { log('broadcast', o.status, '->', n.status); send('broadcastState', { status: n.status }); } });
+  player.on('error', (e) => { log('broadcast player error', e && e.message); send('broadcastState', { status: 'error', error: String(e && e.message || e) }); });
+  try { conn.subscribe(player); } catch (e) { log('player subscribe failed', e.message); }
+  return player;
+}
+
 function stopBroadcast() {
   if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
+  send('broadcastState', { status: 'idle' });
 }
 
 // ---------------------------------------------------------------------------
@@ -765,8 +777,7 @@ function liveBroadcastStart() {
     liveStream = new Readable({ read() {} });
     liveStream.on('error', (e) => { log('liveStream error', e && e.message); }); // never let a stream error crash main
     const resource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.WebmOpus });
-    if (!player) { player = voice.createAudioPlayer(); conn.subscribe(player); }
-    player.removeAllListeners(voice.AudioPlayerStatus.Idle);
+    ensurePlayer();
     player.play(resource);
     return { ok: true };
   } catch (e) { liveStream = null; return { ok: false, reason: 'failed', detail: e.message }; }
@@ -829,8 +840,7 @@ async function broadcastFile(filePath, opts = {}) {
       return { ok: false, reason: 'unsupported-format', detail: ext + ' needs ffmpeg; use an Ogg/Opus or WAV file' };
     }
   } catch (e) { return { ok: false, reason: 'resource-failed', detail: e.message }; }
-  if (!player) { player = voice.createAudioPlayer(); conn.subscribe(player); }
-  player.removeAllListeners(voice.AudioPlayerStatus.Idle); // avoid stacking loop handlers
+  ensurePlayer();
   player.play(resource);
   // once() so a failed re-broadcast can't leave a stale Idle listener firing in a livelock
   if (opts.loop) player.once(voice.AudioPlayerStatus.Idle, () => { broadcastFile(filePath, opts).catch(() => {}); });
@@ -854,7 +864,9 @@ function wavToOpusStream(buf) {
   const FR = 960; // 20ms @48k stereo
   const bps = (bits / 8) * ch; // bytes per source sample-frame
   const samples = Math.floor(dataLen / bps);
-  const out = new Readable({ read() {} });
+  // objectMode: each push is ONE discrete Opus packet (the player reads one packet
+  // per frame; a byte-mode stream would concatenate packets and corrupt playback).
+  const out = new Readable({ objectMode: true, read() {} });
   let done = false;
   const cleanup = () => { if (done) return; done = true; try { enc.delete(); } catch (e) {} };
   out.on('close', cleanup); // free the encoder if playback is stopped/abandoned

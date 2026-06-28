@@ -787,7 +787,8 @@ function buildDiscord(working, campaign, sys, saveNotes) {
         draw();
       } }),
     ]));
-    bsec.appendChild(el('p.tiny.mute', { style: { marginTop: '4px' } }, 'Plays everything this app produces (Mixer scenes, Audio Cues, soundboard) into the voice channel.'));
+    if (on && discord.broadcastStatus) bsec.appendChild(el('p.tiny', { style: { marginTop: '2px', color: discord.broadcastStatus === 'error' ? 'var(--ember,#ff2a1f)' : 'var(--mute)' } }, discord.broadcastStatus === 'error' ? ('Error: ' + (discord.broadcastError || '')) : ('Status: ' + discord.broadcastStatus)));
+    bsec.appendChild(el('p.tiny.mute', { style: { marginTop: '4px' } }, 'Plays everything this app produces (Mixer scenes, Audio Cues, soundboard) into the voice channel. Play a sound to test.'));
     body.appendChild(bsec);
   };
 
@@ -801,7 +802,7 @@ function buildDiscord(working, campaign, sys, saveNotes) {
   };
 
   draw();
-  ['status', 'members', 'voiceJoin', 'voiceLeave', 'recordingState', 'recordingComplete'].forEach((ev) => unsub.push(discord.on(ev, () => draw())));
+  ['status', 'members', 'voiceJoin', 'voiceLeave', 'recordingState', 'recordingComplete', 'broadcastState'].forEach((ev) => unsub.push(discord.on(ev, () => draw())));
   unsub.push(discord.on('speaking', (e) => { const d = dotEls.get(e.userId); if (d) d.style.background = e.speaking ? 'var(--good)' : 'var(--steel,#5a6c7e)'; }));
   return card;
 }

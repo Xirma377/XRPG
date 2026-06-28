@@ -70,6 +70,23 @@ async function renderDetail(id) {
 function buildRecap(s) {
   const col = el('div.col.gap-4');
   if (s.audioMediaId) { const a = el('audio', { controls: true, src: `xrpg://media/audio/${s.audioMediaId}`, style: { width: '100%' } }); col.appendChild(a); }
+  // Per-speaker Discord recordings (accumulated across every record segment).
+  if (s.discordRecordings && s.discordRecordings.length) {
+    const rsec = el('div.col.gap-1');
+    rsec.appendChild(el('h3', { style: { marginBottom: '2px' } }, `Discord recordings · ${s.discordRecordings.length} track${s.discordRecordings.length === 1 ? '' : 's'}`));
+    s.discordRecordings.forEach((tr) => {
+      const r = el('div.row.between', { style: { alignItems: 'center', gap: '8px' } });
+      r.appendChild(el('span.small', { style: { flex: 'none' } }, `${tr.label || tr.username || 'Track'}${tr.role === 'gm' ? ' (GM)' : ''}`));
+      r.appendChild(el('audio', { controls: true, src: tr.url || `xrpg://media/audio/${tr.mediaId}`, style: { height: '30px', flex: '1', minWidth: '0' } }));
+      rsec.appendChild(r);
+    });
+    const mixes = (s.discordMixdowns && s.discordMixdowns.length) ? s.discordMixdowns : (s.discordMixdownUrl ? [{ url: s.discordMixdownUrl }] : []);
+    if (mixes.length) {
+      rsec.appendChild(el('div.small.mute', { style: { marginTop: '6px' } }, `Mixdown${mixes.length > 1 ? 's' : ''} (time-aligned)`));
+      mixes.forEach((mx) => rsec.appendChild(el('audio', { controls: true, src: mx.url || `xrpg://media/audio/${mx.mediaId}`, style: { width: '100%' } })));
+    }
+    col.appendChild(rsec);
+  }
   if (s.summary) { const prose = el('div.prose.selectable'); setMarkdown(prose, s.summary); col.appendChild(prose); }
   else col.appendChild(empty('No recap', { icon: 'spark', hint: 'Resume the session and generate an AI recap.' }));
   if (s.reflection) { col.appendChild(el('h3', 'Reflection')); col.appendChild(el('p.prose.selectable', s.reflection)); }

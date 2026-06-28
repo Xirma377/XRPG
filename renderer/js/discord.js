@@ -27,6 +27,8 @@ class Discord extends Emitter {
         if (e.speaking) this.speaking.add(e.userId); else this.speaking.delete(e.userId); break;
       case 'recordingState':
         this.recording = e.active ? { active: true, sessionId: e.sessionId } : null; break;
+      case 'broadcastState':
+        this.broadcastStatus = e.status; this.broadcastError = e.error || null; break;
       default: break;
     }
     this.emit(e.type, e);
