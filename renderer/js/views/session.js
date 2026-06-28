@@ -17,6 +17,7 @@ import { startSession } from './campaigns.js';
 import { portraitNode } from '../portrait.js';
 import { adjustReward, rewardStatOf, useItem } from '../progress.js';
 import discord from '../discord.js';
+import { openSessionWizard } from './session-wizard.js';
 
 let rec = null;
 let unsub = [];
@@ -54,6 +55,7 @@ export async function render(id) {
   const sessionTimer = el('span.mono', fmtClock(working.durationSec || 0));
   shell.actions([
     sessionTimer,
+    button('Setup', { icon: 'spark', size: 'sm', title: 'Session setup wizard: Discord, player links, attendance, recording', onClick: () => openSessionWizard(working, campaign, saveNow) }),
     button('Player Display', { icon: 'eye', size: 'sm', title: 'Open the tabletop in a separate window for players', onClick: () => window.xrpg.window.popout('vtt', 'player') }),
     button('Pop Mixer', { icon: 'music', size: 'sm', onClick: () => window.xrpg.window.popout('mixer', 'mixer') }),
     button('End Session', { icon: 'stop', size: 'sm', variant: 'danger', onClick: () => endSession(working, campaign) }),
@@ -101,6 +103,9 @@ export async function render(id) {
 
   wrap.appendChild(detail);
   shell.render(wrap);
+
+  // First time this session is opened, walk the GM through setup.
+  if (!working.wizardShown && !window.__popout) openSessionWizard(working, campaign, saveNow);
 }
 
 // ---------- Launcher ----------
