@@ -1,0 +1,6 @@
+{
+  "collection": "groups",
+  "docs": [
+    { "id": "grp_vacationers", "name": "The Vacationers", "color": "#ff2a1f", "playerIds": ["plr_sam", "plr_jordan", "plr_alex"], "notes": "The Thursday table running STRAIN Z." }
+  ]
+}

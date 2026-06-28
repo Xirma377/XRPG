@@ -1,0 +1,37 @@
+/* ---------- Audio Mixer ---------- */
+.mixer-layout { display: grid; grid-template-columns: 1fr 300px; gap: 18px; align-items: start; }
+@media (max-width: 1040px) { .mixer-layout { grid-template-columns: 1fr; } }
+
+.channel-strip { display: flex; flex-direction: column; gap: 10px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--r-2); padding: 14px; margin-bottom: 12px; }
+.channel-strip.playing { border-color: color-mix(in srgb, var(--accent) 60%, var(--line)); }
+.channel-strip.paused { border-color: color-mix(in srgb, var(--warn) 55%, var(--line)); }
+.channel-head { display: flex; align-items: center; gap: 10px; }
+.channel-icon { width: 38px; height: 38px; border-radius: var(--r-1); display: grid; place-items: center; background: var(--bg-3); color: var(--accent); flex: none; }
+.channel-name { font-weight: 600; font-size: 14px; }
+.channel-type { font-size: 11px; color: var(--text-mute); text-transform: uppercase; letter-spacing: .04em; }
+.channel-controls { display: flex; align-items: center; gap: 8px; }
+.vu { height: 4px; border-radius: 3px; background: var(--bg-3); overflow: hidden; flex: 1; }
+.vu > span { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, var(--good), var(--warn), var(--bad)); transition: width .08s; }
+.fader { display: flex; align-items: center; gap: 10px; }
+.fader .icon { color: var(--text-mute); flex: none; }
+.fader input[type=range] { flex: 1; }
+.transport-btn { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--bg-3); border: 1px solid var(--line); color: var(--text); flex: none; }
+.transport-btn:hover { background: var(--bg-4); }
+.transport-btn.playing { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+
+.cue-board { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+.cue-pad { aspect-ratio: 1.3; border-radius: var(--r-2); background: var(--bg-2); border: 1px solid var(--line); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 7px; padding: 10px; text-align: center; transition: transform .06s, border-color .12s, background .12s; cursor: pointer; }
+.cue-pad:hover { border-color: var(--accent); background: var(--bg-3); }
+.cue-pad:active { transform: scale(.96); }
+.cue-pad.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); box-shadow: 0 0 0 1px var(--accent); }
+.cue-pad .ci { color: var(--accent); }
+.cue-pad .cn { font-size: 12px; font-weight: 600; line-height: 1.2; }
+.cue-pad .ck { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+
+.preset-pill { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-1); border: 1px solid var(--line-soft); border-radius: var(--r-1); cursor: pointer; margin-bottom: 6px; }
+.preset-pill:hover { border-color: var(--accent); }
+.preset-pill.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, transparent); }
+.preset-pill .pn { flex: 1; font-size: 13px; font-weight: 500; }
+
+.master-bar { display: flex; align-items: center; gap: 14px; background: var(--panel); border: 1px solid var(--line-soft); border-radius: var(--r-2); padding: 12px 16px; margin-bottom: 16px; }
+.master-bar .mlabel { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--text-mute); }

@@ -1,0 +1,322 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_morkborg",
+      "name": "MÖRK BORG (compatible)",
+      "tagline": "A doom metal d20 of dying dirt-bags",
+      "version": "1e — Third-Party Compatible",
+      "author": "XRPG (third-party content, MÖRK BORG-compatible)",
+      "summary": "A rules-light, doom-soaked d20 system built for a dying world. Roll 1d20, add the relevant Ability, and try to meet or beat the Difficulty Rating (default DR12). This is original, openly-licensed third-party content compatible with MÖRK BORG — keep the misery, bring your own scrolls.",
+      "theme": {
+        "accent": "#e6e600",
+        "accent2": "#b3b300",
+        "cool": "#ff2a1f",
+        "displayFont": "Oswald",
+        "titleFont": "Oswald",
+        "monoFont": "Share Tech Mono",
+        "mood": "doom"
+      },
+      "dice": {
+        "notation": "1d20",
+        "resolution": "roll-high",
+        "summary": "1d20 + Ability ≥ DR (default DR12). Natural 20 = critical success, natural 1 = fumble.",
+        "crit": { "success": [20], "failure": [1] }
+      },
+      "attributes": [
+        { "key": "agility", "name": "Agility", "abbr": "AGI", "default": 0, "min": -3, "max": 6, "desc": "Dodging, climbing, sneaking, balance, and Defense against incoming attacks." },
+        { "key": "presence", "name": "Presence", "abbr": "PRE", "default": 0, "min": -3, "max": 6, "desc": "Force of will, command, ranged aim, and the wielding of Powers and unclean Scrolls." },
+        { "key": "strength", "name": "Strength", "abbr": "STR", "default": 0, "min": -3, "max": 6, "desc": "Melee attacks, brute force, lifting, breaking, and grappling." },
+        { "key": "toughness", "name": "Toughness", "abbr": "TGH", "default": 0, "min": -3, "max": 6, "desc": "Stamina, resisting poison, disease, and cold; the basis of your Hit Points." }
+      ],
+      "attributeRules": {
+        "start": 0,
+        "startMin": -3,
+        "startMax": 3,
+        "note": "Generate each ability by rolling 3d6: 1-4 = -3, 5-6 = -2, 7-8 = -1, 9-12 = ±0, 13-14 = +1, 15-16 = +2, 17-18 = +3. Roll them in order: Agility, Presence, Strength, Toughness."
+      },
+      "deriveds": [
+        { "key": "hp", "name": "Hit Points", "abbr": "HP", "formula": "max(1, toughness + 8)", "min": 1, "resource": true, "desc": "Roll 1d8 + Toughness at creation (min 1). This shows a representative value; you can edit it after rolling." },
+        { "key": "omens_note", "name": "Omens", "abbr": "OMN", "formula": "2", "min": 0, "desc": "1d2 fate points per session, spent to reroll, ignore damage, or reduce a Broken result. Refreshes each session." }
+      ],
+      "dcLadder": [
+        { "name": "Easy", "dc": 6 },
+        { "name": "Standard", "dc": 12 },
+        { "name": "Hard", "dc": 16 },
+        { "name": "Nigh Impossible", "dc": 18 }
+      ],
+      "conditions": [
+        { "name": "Broken", "effect": "At 0 HP you collapse, Broken. Roll 1d4 on the Broken table: jaw shattered & 1d4 teeth lost (unconscious 1 hour); fall over weeping (paralyzed by pain, unconscious 1d4 rounds); bleeding & dying (die in 1d4 rounds unless tended; thereafter at 1d4 HP); or dead (or as good as)." },
+        { "name": "Bleeding Out", "effect": "Dying. You will be dead in 1d4 rounds unless an ally reaches you and succeeds a DR12 Presence test to staunch the wound. Stabilized, you stagger up at 1d4 HP." },
+        { "name": "Infected", "effect": "A festering wound or filthy bite. Each day make a DR12 Toughness test; on a fail lose 1d4 HP and the infection spreads. Three failures means death by rot and fever, then you may not stay still." },
+        { "name": "Falling Apart", "effect": "Cursed, starving, or rotting from within. −2 (DR +2) to all tests and you cannot recover HP through rest until the cause is removed. Often a slow, deserved death." }
+      ],
+      "weapons": [
+        { "name": "Femur / improvised", "damage": "1d4", "notes": "Anything you can grab. Brutal and pathetic." },
+        { "name": "Knife / shortsword", "damage": "1d4", "notes": "Quick, concealable, one-handed." },
+        { "name": "Warhammer / mace", "damage": "1d6", "notes": "Crushes; one-handed." },
+        { "name": "Sword / axe", "damage": "1d6", "notes": "Reliable one-handed killer." },
+        { "name": "Zweihänder / great weapon", "damage": "1d10", "notes": "Two-handed. Slow and devastating." },
+        { "name": "Bow", "damage": "1d6", "notes": "Ranged. Presence to fire. Needs both hands; ammo is scarce." },
+        { "name": "Crossbow", "damage": "1d8", "notes": "Ranged, hard-hitting; reload takes an action." },
+        { "name": "Sling / thrown rock", "damage": "1d4", "notes": "Ranged. Last resort of the truly poor." }
+      ],
+      "bestiary": [
+        {
+          "name": "Pale One",
+          "meta": "Plague-thrall · Undead",
+          "hp": 6,
+          "ac": 0,
+          "statblock": "**HP** 6 · **Morale** 8 · **Defense** DR10\n\nGrey, drowned-looking dead that shamble from cellars and bogs. Cold to the touch and utterly without fear.\n\n- **Grasping hands** (DR12 attack): 1d4 damage. On a hit, the target must pass DR12 Toughness or contract a creeping rot (**Infected**).\n- **No pain:** ignores the first point of damage from any single blow.\n- **Special:** if reduced to 0 HP but the head is intact, it claws after you for one more round.",
+          "tags": ["undead", "common", "disease"]
+        },
+        {
+          "name": "Goblin Scavenger",
+          "meta": "Vermin-kin · Humanoid",
+          "hp": 4,
+          "ac": 0,
+          "statblock": "**HP** 4 · **Morale** 6 · **Defense** DR13\n\nSpindly, knife-eared scavengers that hunt the dead and the dying in packs.\n\n- **Rusty blade** (DR12 attack): 1d4 damage.\n- **Sling** (DR12 ranged): 1d4 damage.\n- **Cowardly:** tests Morale the instant one of its pack falls. Fights viciously when cornered or in numbers of five or more.",
+          "tags": ["humanoid", "common", "pack"]
+        },
+        {
+          "name": "Undead Wretch",
+          "meta": "Risen corpse · Undead",
+          "hp": 8,
+          "ac": 0,
+          "statblock": "**HP** 8 · **Morale** — (never flees) · **Defense** DR11\n\nThe restless dead of a damned land — slow, relentless, and never alone.\n\n- **Rotten claws & teeth** (DR12 attack): 1d6 damage.\n- **Mindless:** immune to fear, Morale, and any Power that sways the living mind.\n- **Slow:** acts last in the round. A nimble victim (DR12 Agility) can outrun a lone Wretch — but rarely a whole churchyard of them.",
+          "tags": ["undead", "common", "relentless"]
+        },
+        {
+          "name": "Cursed Knight",
+          "meta": "Damned warrior · Undead",
+          "hp": 14,
+          "ac": 0,
+          "statblock": "**HP** 14 · **Morale** 11 · **Defense** DR15 (heavy, rusted plate)\n\nAn oath-bound corpse welded into its armor, still patrolling a keep that fell to ruin centuries ago.\n\n- **Cursed greatsword** (DR12 attack, +2 to hit): 1d10 damage.\n- **Armor:** the rusted plate negates 1d4 damage per hit and imposes Hard (DR16) on any attempt to wound it cleanly.\n- **Undying:** at 0 HP it crumbles, but on a roll of 1d6 = 1 it reassembles over the next night unless the helm is shattered.",
+          "tags": ["undead", "boss", "armored"]
+        },
+        {
+          "name": "Catacomb Saint",
+          "meta": "Gilded relic-horror · Undead",
+          "hp": 18,
+          "ac": 0,
+          "statblock": "**HP** 18 · **Morale** — (never flees) · **Defense** DR14\n\nA bejeweled, bone-dry martyr propped in a forgotten ossuary, animate with a cold and jealous holiness.\n\n- **Withering touch** (DR14 attack): 1d8 damage and the victim ages, suffering −1 (DR +1) to all tests until they rest a full night.\n- **Toll of bells** (once per scene): every living creature that hears it makes a DR14 Presence test or is paralyzed by dread for 1d4 rounds.\n- **Hoard-bound:** will not leave its reliquary. Steal its gilding and it pursues to the ends of the wretched earth.",
+          "tags": ["undead", "boss", "holy"]
+        },
+        {
+          "name": "Plague Rat Swarm",
+          "meta": "Vermin tide · Beast (swarm)",
+          "hp": 10,
+          "ac": 0,
+          "statblock": "**HP** 10 · **Morale** 4 · **Defense** DR12\n\nA boiling carpet of fat, sore-covered rats that strips a corpse to bone in minutes.\n\n- **Gnawing tide** (auto-hit, no test): 1d4 damage to every creature in its space each round.\n- **Disease:** anyone bitten passes DR12 Toughness or becomes **Infected**.\n- **Diffuse:** ordinary weapons deal only 1 damage per hit. Fire, flood, and area effects deal full damage.\n- **Scatters:** disperses if reduced to 2 HP or driven off by flame.",
+          "tags": ["beast", "swarm", "disease"]
+        },
+        {
+          "name": "Bloodless",
+          "meta": "Drained husk · Undead",
+          "hp": 11,
+          "ac": 0,
+          "statblock": "**HP** 11 · **Morale** 9 · **Defense** DR13\n\nWhite-eyed, parchment-skinned dead that thirst for the warmth of living blood.\n\n- **Draining bite** (DR12 attack): 1d6 damage, and the Bloodless heals half that (rounded up).\n- **Mesmerize** (once per target): the victim meets its gaze and tests DR12 Presence or stands transfixed for 1 round.\n- **Sun-fearing:** suffers −2 (DR +2) and 1 HP per round in direct sunlight or holy flame.",
+          "tags": ["undead", "predator", "lifedrain"]
+        },
+        {
+          "name": "Wickhead",
+          "meta": "Wax-lit horror · Aberration",
+          "hp": 9,
+          "ac": 0,
+          "statblock": "**HP** 9 · **Morale** 7 · **Defense** DR12\n\nA hunched thing whose skull is a guttering tallow candle, dripping and ever-burning.\n\n- **Burning grasp** (DR12 attack): 1d6 fire damage; on a hit the victim risks catching alight (DR12 Agility or take 1d4 more next round).\n- **Hateful light:** sheds sickly light in a wide radius; any creature it can see by its own flame is attacked at +2 to hit.\n- **Snuffed:** dousing its candle (a called shot, DR16) drops it instantly to 0 HP.",
+          "tags": ["aberration", "fire", "eerie"]
+        },
+        {
+          "name": "Grave-Maggot",
+          "meta": "Charnel worm · Beast",
+          "hp": 13,
+          "ac": 0,
+          "statblock": "**HP** 13 · **Morale** 5 · **Defense** DR11\n\nA pallid, man-thick worm that burrows up through graveyards to feed on the buried and the mourning alike.\n\n- **Swallowing maw** (DR14 attack): 1d8 damage; on a natural-20 critical it swallows a man-sized victim whole (1d6 acid damage per round inside until cut free).\n- **Burrow:** moves unseen beneath loose earth and emerges anywhere within a large area.\n- **Blind:** hunts by tremor. Standing perfectly still grants Hard (DR16) to its attacks.",
+          "tags": ["beast", "burrower", "ambush"]
+        },
+        {
+          "name": "Two-Headed Basilisk",
+          "meta": "Cursed reptile · Monstrosity",
+          "hp": 16,
+          "ac": 0,
+          "statblock": "**HP** 16 · **Morale** 9 · **Defense** DR13\n\nA scaled horror of the wastes, both skulls hissing venom, its gaze a slow poison.\n\n- **Twin bites** (two DR12 attacks per round): 1d6 damage each; a creature struck twice in one round is also envenomed (DR12 Toughness or lose 1d4 HP next round).\n- **Petrifying gaze** (once per scene): one creature meeting its eyes tests DR14 Toughness or stiffens, slowed to half actions for 1d4 rounds.\n- **Two minds:** unaffected by attacks or Powers that target a single mind.",
+          "tags": ["monstrosity", "venom", "boss"]
+        },
+        {
+          "name": "Heretical Priest",
+          "meta": "Fanatic cultist · Humanoid",
+          "hp": 10,
+          "ac": 0,
+          "statblock": "**HP** 10 · **Morale** 9 · **Defense** DR12\n\nA robed zealot of a forbidden creed, mouth full of prayers that were never meant to be spoken.\n\n- **Ritual dagger** (DR12 attack): 1d4 damage.\n- **Unclean Scroll** (DR14 Presence to invoke): once per scene calls down a blast that deals 1d6 damage to all foes within reach, or summons 1d4 **Pale Ones** from the nearest unhallowed ground.\n- **Zealous flock:** rarely travels with fewer than 1d4 fanatic acolytes (treat as Goblin Scavengers with knives).",
+          "tags": ["humanoid", "caster", "cult"]
+        },
+        {
+          "name": "Berserker",
+          "meta": "Blood-mad raider · Humanoid",
+          "hp": 12,
+          "ac": 0,
+          "statblock": "**HP** 12 · **Morale** 11 · **Defense** DR11\n\nA howling, foam-flecked killer who has long since traded reason for slaughter.\n\n- **Great axe** (DR12 attack, +1 to hit): 1d10 damage.\n- **Frenzy:** when reduced below half HP, attacks twice per round but defends at Easy (DR -2 for its foes).\n- **Fearless:** never tests Morale and cannot be Frightened. Fights until destroyed.",
+          "tags": ["humanoid", "brute", "frenzy"]
+        },
+        {
+          "name": "Goblin Warlord",
+          "meta": "Vermin chieftain · Humanoid",
+          "hp": 15,
+          "ac": 0,
+          "statblock": "**HP** 15 · **Morale** 9 · **Defense** DR13\n\nThe biggest, meanest goblin in a warren, festooned in stolen teeth and rusted finery.\n\n- **Notched cleaver** (DR12 attack, +2 to hit): 1d8 damage.\n- **War-cry:** as an action, grants every goblin within earshot +1 to hit and immunity to Morale for one round.\n- **Coward at heart:** if dropped below 5 HP and alone, flees and abandons its underlings without hesitation.",
+          "tags": ["humanoid", "boss", "pack"]
+        },
+        {
+          "name": "Bog Mummy",
+          "meta": "Peat-cured dead · Undead",
+          "hp": 13,
+          "ac": 0,
+          "statblock": "**HP** 13 · **Morale** — (never flees) · **Defense** DR13\n\nLeathery, tar-black dead dredged up from a drowning mire, dripping and patient.\n\n- **Suffocating grasp** (DR12 attack): 1d6 damage; on a hit, the victim is grappled and begins to drown in mud (DR12 Strength to break free; 1d4 damage each round held).\n- **Waterlogged:** immune to drowning and to cold; fire deals only half damage until it dries.\n- **Sinking:** can drag a grappled victim down into the bog over three rounds — a slow, certain death.",
+          "tags": ["undead", "grappler", "mire"]
+        }
+      ],
+      "tables": [
+        {
+          "id": "broken",
+          "name": "Broken (d4)",
+          "die": "d4",
+          "entries": [
+            "Jaw shattered and 1d4 teeth lost. Unconscious for 1 hour, then up at 1 HP.",
+            "Fall over weeping, paralyzed by pain. Unconscious for 1d4 rounds, then up at 1d4 HP.",
+            "Bleeding & dying. Die in 1d4 rounds unless an ally tends you (DR12 Presence). Survive at 1d4 HP.",
+            "Dead. Or as good as. The land takes another."
+          ]
+        },
+        {
+          "id": "scvm-fate",
+          "name": "A Wretch's Last Words (d6)",
+          "die": "d6",
+          "entries": [
+            "\"I should have stayed in the gutter where it was warm.\"",
+            "\"The bells. Do you hear the bells?\"",
+            "\"Tell no one how I died. Tell no one I lived.\"",
+            "\"There was supposed to be more time.\"",
+            "\"The dirt is rising. It is always rising.\"",
+            "Nothing. Only a wet, final cough."
+          ]
+        },
+        {
+          "id": "found-scroll",
+          "name": "A Scroll Discovered (d6)",
+          "die": "d6",
+          "entries": [
+            "Sacred: a stuttered psalm that heals 1d6 HP to one touched living thing.",
+            "Sacred: a ward of light that staggers the unliving within reach for 1 round.",
+            "Unclean: a name that boils the blood — 1d6 damage to one foe you can see.",
+            "Unclean: a whispered bargain that opens any one lock or unbinds any one chain.",
+            "Unclean: rotted ink that summons 1d4 Pale Ones to serve for a single scene.",
+            "Sacred: a blessing that grants one ally +2 to their next test, then crumbles to ash."
+          ]
+        }
+      ],
+      "rollPresets": [
+        { "name": "Agility test (Defend / dodge)", "attr": "agility", "ease": "Standard", "note": "Also your Defense roll when something attacks you." },
+        { "name": "Presence test (Powers / aim)", "attr": "presence", "ease": "Standard", "note": "Invoke Scrolls; fire a bow; impose your will." },
+        { "name": "Strength test (Attack / force)", "attr": "strength", "ease": "Standard", "note": "Swing a melee weapon; break, lift, grapple." },
+        { "name": "Toughness test (Resist)", "attr": "toughness", "ease": "Standard", "note": "Resist poison, disease, cold, and exhaustion." },
+        { "name": "Melee Attack", "attr": "strength", "ease": "Standard", "note": "DR12 + roll ≥ DR. Hit = weapon damage − foe armor." },
+        { "name": "Ranged Attack", "attr": "presence", "ease": "Standard", "note": "Bow, sling, crossbow. Range and cover may raise DR." },
+        { "name": "Defend (Dodge)", "attr": "agility", "ease": "Hard", "note": "Defend is DR12; armor worn raises the DR (see Damage & Armor)." },
+        { "name": "Invoke a Scroll", "attr": "presence", "ease": "Hard", "note": "Sacred or Unclean. Fumble = a terrible miscast." },
+        { "name": "Sneak / Climb / Balance", "attr": "agility", "ease": "Standard", "note": "Stealth and acrobatics." },
+        { "name": "Resist Poison / Disease", "attr": "toughness", "ease": "Standard", "note": "Often Hard (DR16) for virulent rot." },
+        { "name": "Morale (NPC/foe)", "attr": "presence", "ease": "Standard", "note": "GM rolls 2d6 ≤ Morale; under = fights on, over = flees." },
+        { "name": "Reaction (NPC)", "attr": "presence", "ease": "Standard", "note": "How a stranger first meets you — see Reaction & Morale." }
+      ],
+      "rewardStat": { "key": "silver", "name": "Silver & XP", "perSession": "survival" },
+      "npcStatFormat": "AGI / PRE / STR / TGH | HP | Morale | DR(def)",
+      "reference": [
+        {
+          "id": "mb-tests",
+          "title": "Tests & DR",
+          "category": "Core Rules",
+          "tags": ["test", "dr", "d20"],
+          "body": "When the outcome is uncertain and failure has teeth, make a **Test**: roll **1d20**, add the relevant **Ability** (Agility, Presence, Strength, or Toughness), and compare the total to the **Difficulty Rating (DR)** the GM has set.\n\n> **Meet or beat the DR → success.** Below it → failure.\n\nThe default DR is **12**. The GM raises or lowers it to fit the fiction:\n\n| Difficulty | DR |\n|---|---|\n| **Easy** | 6 |\n| **Standard** | 12 |\n| **Hard** | 16 |\n| **Nigh Impossible** | 18 |\n\nRather than tracking long lists of modifiers, simply shift the DR up or down a step for favorable or hostile conditions. **Don't call for a test** when there's no risk and no pressure — just narrate it. The dice are for moments that can cost blood, time, or your wretched soul."
+        },
+        {
+          "id": "mb-crit-fumble",
+          "title": "Criticals & Fumbles",
+          "category": "Core Rules",
+          "tags": ["crit", "fumble", "natural20", "natural1"],
+          "body": "The 20-sided die has two faces of fate, regardless of the DR:\n\n- **Natural 20 — Critical Success.** The best plausible outcome. In combat, a critical attack deals **double damage** and may shatter a shield or pierce armor. On a skill test, you achieve more than you hoped.\n- **Natural 1 — Fumble.** Disaster beyond a simple miss. A weapon breaks or is dropped, a Scroll miscasts horribly, footing is lost, attention is drawn. In combat a fumbling attacker takes **1d4 damage** or leaves themselves open to a free strike.\n\nNaturals override everything: a natural 20 hits no matter how high the DR, and a natural 1 fails no matter how low. Save the fumble's worst consequences for the moments where they'll sting most."
+        },
+        {
+          "id": "mb-combat",
+          "title": "Combat & Initiative",
+          "category": "Combat",
+          "tags": ["combat", "initiative", "round", "turn"],
+          "body": "Combat is fast, ugly, and frequently fatal.\n\n**Initiative.** At the start of a fight each side rolls **1d6**. On the players' winning roll, the party acts first this round; otherwise the enemies do. Reroll initiative each round, so the tide can turn.\n\n**A turn.** On your turn you may **move** a short distance and take **one action** — attack, invoke a Scroll, drink a potion, flee, or attempt something desperate. A few words are free.\n\n**Attacking** is a player-facing roll: *you* roll to attack when you strike, and *you* roll to Defend when something strikes you. The GM rarely rolls to hit; the dice stay in the players' trembling hands.\n\n**Distance** is abstract — close (melee), nearby (a short dash), or far (a ranged shot). Don't bother with grids unless you crave them."
+        },
+        {
+          "id": "mb-attack-defend",
+          "title": "Attack & Defend",
+          "category": "Combat",
+          "tags": ["attack", "defend", "dodge", "melee", "ranged"],
+          "body": "**To Attack** a foe, make a **DR12 test**: **Strength** for melee, **Presence** for ranged. Meet or beat DR12 and you hit — roll the weapon's damage and subtract the target's armor.\n\n**To Defend** when a foe attacks *you*, make a **DR12 Agility test**. Succeed and you avoid the blow entirely. Fail and you take the foe's weapon damage, minus your armor.\n\n| Weapon | Damage |\n|---|---|\n| Femur / knife / sling | 1d4 |\n| Sword / axe / bow / mace | 1d6 |\n| Crossbow | 1d8 |\n| Zweihänder / great axe | 1d10 |\n\n- **Wielding two-handed** weapons needs both hands free; no shield.\n- **Out of reach?** A melee Attack against a far foe is impossible; close the distance first.\n- **Cover, darkness, or footing** may shift the Attack or Defend DR up a step (to DR16)."
+        },
+        {
+          "id": "mb-damage-armor",
+          "title": "Damage & Armor",
+          "category": "Combat",
+          "tags": ["damage", "armor", "hp", "shield"],
+          "body": "Damage rolled is subtracted from the target's **Hit Points (HP)**. Armor blunts the blow.\n\n| Armor | Reduces damage by | Drawback |\n|---|---|---|\n| **None** | — | — |\n| **Light** (furs, leather) | −1d2 | none |\n| **Medium** (chain, brigandine) | −1d4 | DR +2 on Agility & Defend tests; Presence (Scrolls) at DR +2 |\n| **Heavy** (plate) | −1d6 | DR +2 on Agility & Defend, cannot run, Scrolls forbidden |\n\n**Shields** let you **break the shield** to negate one hit entirely (the shield is destroyed), or grant a small bonus to Defend at the GM's discretion.\n\nWhen damage drops you to **0 HP or below**, you are **Broken** (see *Broken & Death*). HP recovers slowly: a night's rest and a meal restores **1d4 HP**; a successful DR12 Presence test to tend wounds can restore **1d6** once per rest."
+        },
+        {
+          "id": "mb-broken-death",
+          "title": "Broken & Death",
+          "category": "Combat",
+          "tags": ["broken", "death", "dying", "0hp"],
+          "body": "At **0 HP** you fall, **Broken**. Roll **1d4** on the Broken table:\n\n| d4 | Result |\n|---|---|\n| **1** | Jaw shattered, lose 1d4 teeth. Unconscious 1 hour, then up at 1 HP. |\n| **2** | Collapse weeping in agony. Unconscious 1d4 rounds, then up at 1d4 HP. |\n| **3** | **Bleeding out** — dead in 1d4 rounds unless an ally reaches you and passes a DR12 Presence test. Tended, you rise at 1d4 HP. |\n| **4** | **Dead.** The land claims you. Roll up a new wretch. |\n\n**Omens** (see *Getting Better*) may be spent to reroll a Broken result or downgrade death to mere ruin. Death in this world is cheap, swift, and rarely heroic — make the survivors remember it."
+        },
+        {
+          "id": "mb-reaction-morale",
+          "title": "Reaction & Morale",
+          "category": "Combat",
+          "tags": ["reaction", "morale", "npc", "flee"],
+          "body": "Not every meeting is a fight, and not every fight is to the death.\n\n**Reaction.** When the players meet an NPC or creature whose disposition is unclear, the GM rolls **2d6**:\n\n| 2d6 | Reaction |\n|---|---|\n| 2 | Hostile — attacks or flees in terror |\n| 3–5 | Wary / unfriendly |\n| 6–8 | Neutral / uncertain |\n| 9–11 | Talkative / open to deals |\n| 12 | Helpful (for now) |\n\n**Morale.** When a foe is first bloodied, loses a leader, or sees half its number fall, the GM rolls **2d6** against its **Morale** score. **Roll over Morale → it breaks** and flees, surrenders, or scatters. Roll equal or under → it fights on. Mindless undead and fanatics (Morale —) never check; they fight until destroyed."
+        },
+        {
+          "id": "mb-powers-scrolls",
+          "title": "Powers & Scrolls (Sacred & Unclean)",
+          "category": "Magic",
+          "tags": ["powers", "scrolls", "sacred", "unclean", "magic"],
+          "body": "Magic lives in fragile, dangerous **Scrolls**, never memorized. There are two kinds:\n\n- **Sacred Scrolls** — prayers, wards, and healings of dying faiths. Generally protective.\n- **Unclean Scrolls** — names, curses, and summonings best left buried. Generally destructive.\n\n**Invoking** a Scroll is a **Presence test**, usually **Hard (DR16)** for the unclean and **DR12** for the sacred. The number you can attempt per day is limited by your Presence:\n\n| Presence | Powers / day |\n|---|---|\n| −3 to −1 | 0 |\n| ±0 to +1 | Presence value, min 1 |\n| +2 to +6 | Presence value |\n\n- **Success:** the Scroll's effect occurs. **Fumble (natural 1):** a miscast — take 1d4 damage, age a year, draw something hungry, or worse.\n- **Armor interferes:** medium or heavy armor raises Scroll DR or forbids them entirely (see *Damage & Armor*).\n- A used Scroll often crumbles; treasure them like the last warmth on earth."
+        },
+        {
+          "id": "mb-getting-better",
+          "title": "Getting Better (Advancement)",
+          "category": "Characters",
+          "tags": ["advancement", "xp", "silver", "omens", "reward"],
+          "body": "There are no neat experience tables here — only survival, silver, and dwindling fate.\n\n**Surviving a session** is the reward. At the end of each session that your wretch lives through, roll for improvement at the GM's cue:\n\n- **Abilities:** roll **1d6** for each of your four Abilities. On a **5–6**, that Ability rises by **+1** (to a maximum of **+6**); on a **1–2** it may *fall* by 1 in a cruel session.\n- **HP:** roll your current **HP die** anew; if it beats your maximum, raise your max HP by the difference.\n- **Silver** scavenged buys gear, scrolls, healers, and safe beds — the only real power in a doomed land.\n\n**Omens** are your fate points. You begin each session with **1d2 Omens** and may spend one to: reroll any die, ignore the damage of one attack, lower a Broken result by one step, or detonate a held Scroll for double effect. Spent Omens do not return until the next session."
+        },
+        {
+          "id": "mb-calendar-misery",
+          "title": "The Calendar & Misery",
+          "category": "Setting",
+          "tags": ["calendar", "misery", "apocalypse", "doom", "world"],
+          "body": "This is a world that has been promised its end, and the promise is being kept.\n\n**The Calendar of Misery.** The world dies by prophecy, in named stages. The GM may track an ominous **Misery** clock that fills as the campaign grinds on — each filled segment unleashing a foretold calamity: a black sun, a rain of teeth, the rivers running with rot, the dead rising in numbers, the final silence. Players cannot stop it; they can only choose how they meet it.\n\n**Living in the end times.**\n- **Cold, hunger, and rot** are constant: a night exposed or a foul meal calls for a DR12 Toughness test or 1d4 HP and a slide toward **Falling Apart**.\n- **Hope is a resource to be spent**, not assumed. Small mercies — a fire, a meal, a kindness — are the only true treasure.\n- **The dead do not stay down**, and the living are often worse. Trust little; expect betrayal; die well.\n\nRun it grim, run it fast, and let the doom be felt in every roll of the die."
+        },
+        {
+          "id": "mb-character",
+          "title": "Creating a Wretch",
+          "category": "Characters",
+          "tags": ["creation", "character", "build"],
+          "body": "Making a doomed soul takes minutes — they rarely last much longer.\n\n1. **Abilities.** Roll **3d6** for each of **Agility, Presence, Strength, Toughness** (in that order) and read the result: 1-4 = **−3**, 5-6 = **−2**, 7-8 = **−1**, 9-12 = **±0**, 13-14 = **+1**, 15-16 = **+2**, 17-18 = **+3**.\n2. **Hit Points.** Roll **1d8 + Toughness** (minimum 1).\n3. **Omens.** Roll **1d2** — your fate points for the session.\n4. **Gear.** A weapon, perhaps scraps of armor, a few coins, and whatever wretched possessions the GM allows. Maybe a Scroll, if the dice are kind.\n5. **A name and a grudge.** Why are you still walking when the world is ending? Note it. It is the only thing that is yours.\n\nThat's it. Now go and die interestingly."
+        },
+        {
+          "id": "mb-conditions",
+          "title": "Conditions & Afflictions",
+          "category": "Core Rules",
+          "tags": ["conditions", "infected", "broken", "afflictions"],
+          "body": "The dying world marks its own. The common afflictions:\n\n- **Broken** — at 0 HP you collapse; roll on the Broken table (see *Broken & Death*).\n- **Bleeding Out** — dying. Dead in 1d4 rounds unless an ally tends you (DR12 Presence).\n- **Infected** — a festering wound or filthy bite. Each day, DR12 Toughness or lose 1d4 HP as the rot spreads. Three failures is a fevered death, and you may not stay dead.\n- **Falling Apart** — cursed, starving, or rotting within. −2 (DR +2) to all tests and no HP recovery until the cause is cured.\n\nMost conditions are removed by rest, a healer, clean water, the right Scroll, or a desperate prayer. Some are removed only by death — which, here, is never the end of the story."
+        }
+      ],
+      "_seed": true
+    }
+  ]
+}

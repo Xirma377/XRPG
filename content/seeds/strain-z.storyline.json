@@ -1,0 +1,196 @@
+{
+  "collection": "storylines",
+  "docs": [
+    {
+      "id": "story_longwayhome",
+      "systemId": "sys_strainz",
+      "name": "The Long Way Home",
+      "subtitle": "A slow-burn survival-horror campaign",
+      "premise": "The players started the day as ordinary people on a road trip south on I-17 toward a Disneyland vacation. The campaign is the story of them trying to get home to the Quad Cities — and slowly understanding that home is gone, that the people promising to save them are the ones to fear, and that the only way out is a choice nobody should have to make.",
+      "tone": "Grounded realism, freezing-cold survival, quiet dread punctuated by sudden violence. Dread over gore. The dead are NOT the main threat — cold, fuel, panic, and other living people are.",
+      "contentWarnings": [
+        "The death and reanimation of a child (Session 1)",
+        "A pandemic framing layered over the real early days of COVID-19 (late Feb 2020)",
+        "Despair, exposure deaths, and the temptation to abandon others to survive"
+      ],
+      "setting": {
+        "when": "Late February 2020. The world thinks it's a severe respiratory virus; it doesn't know the dead reanimate.",
+        "where": "The I-17 corridor and the Quad Cities — Prescott, Prescott Valley, Chino Valley, Dewey-Humboldt — plus Paulden, Arizona.",
+        "elevation": "3,900–5,400 ft — which is why there's late-February snow and why cold is lethal here, not flavor.",
+        "collapse": "Runs roughly Day 0 → Day 14."
+      },
+      "locations": [
+        { "name": "Sunset Point Rest Area (I-17, ~MP 252)", "tags": ["Session 1"], "desc": "Concrete rest stop on a high ridge — restrooms, vending, ramadas, maintenance sheds. The obvious refuge on night one, which is exactly why it becomes a crowded, contested deathtrap." },
+        { "name": "Cordes Junction / Cordes Lakes", "tags": ["Session 1-2"], "desc": "Where SR-69 peels west off I-17 toward Prescott. Gas, a famous roadside oddity, looted pumps, and the pile-up the players hike toward." },
+        { "name": "SR-69 West (Mayer → Humboldt → Dewey)", "tags": ["Act I-II"], "desc": "Two-lane high-desert highway, the backroad around the military checkpoints. The road home — that turns out not to lead home." },
+        { "name": "Dewey-Humboldt", "tags": ["Act II"], "desc": "Ranch country. A large veterinary clinic (medicine when the hospitals burn). Armed, frightened locals." },
+        { "name": "Prescott — Whiskey Row & Courthouse Plaza", "tags": ["Act II-III"], "desc": "Historic downtown of old saloons and a grand county courthouse square. Once it's burning, a beacon that draws every walker in the basin." },
+        { "name": "Prescott Regional Airport (Ernest A. Love Field)", "tags": ["Act III"], "desc": "North of town. The Guard's forward operating base, the last transport plane, and the heart of the final catastrophe." },
+        { "name": "Deep Well Ranch", "tags": ["Act II refuge", "Act III"], "desc": "A master-planned neighborhood the Guard cordons into its civilian safe zone ('Operation Hearthstone'). Salvation with a shadow over it." },
+        { "name": "Radio Rick's Compound (Chino Valley / Paulden)", "tags": ["Act II-III refuge"], "desc": "Several acres of prepper ground — well, livestock, food stores, walls. The other refuge. Freedom on a knife's edge." }
+      ],
+      "factions": [
+        { "name": "The Stranded (I-17)", "leaderRef": null, "desc": "Hundreds of ordinary motorists. A powder keg — most dead or turned by dawn. Sources of allies, enemies, gear, and grief." },
+        { "name": "The National Guard — 'Operation Hearthstone'", "leaderRef": "npc_reyes", "desc": "Deployed to Love Field to build a cordoned safe zone at Deep Well Ranch. The public face is salvation; underneath, an overwhelmed triage operation with a classified contingency ('Operation Ashfall'). Authority that can shelter you, manage you, and — at the end — write you off." },
+        { "name": "Radio Rick & the Compound", "leaderRef": "npc_rick", "desc": "A ham-radio prepper on several acres. Paranoid, prickly, deeply decent to people who pull their weight. The campaign's off-grid intel source and its 'build a life' refuge." },
+        { "name": "Dr. Rosas & the Dewey Ranchers", "leaderRef": "npc_rosas", "desc": "Walled-in, well-armed, scared. Not villains — people doing the math on every stranger at the door. A possible ally and a source of hard truths about the infection." },
+        { "name": "The Phoenix Rumor (the Feds)", "leaderRef": null, "desc": "Distant, faceless, maybe imaginary — a federal field-research effort in the dead heart of the metro. The thing the players reach for when every other door closes." }
+      ],
+      "npcs": ["npc_mac", "npc_sarah", "npc_leo", "npc_paramedic", "npc_rick", "npc_reyes", "npc_rosas", "npc_ranchers"],
+      "timeline": [
+        { "when": "Days −14 to 0", "what": "Travel bans. ERs overflow with violent 'fever' cases that don't respond to treatment. Rumors online; official denials." },
+        { "when": "Day 0 — Tonight", "what": "Phoenix panics. State police lock down the highways out of Maricopa County. The players are caught on I-17. (Session 1)" },
+        { "when": "Day 1", "what": "National Guard convoys roll into Prescott Regional (Love Field) to stand up a forward base. Rolling blackouts begin. Players escape the highway corridor. (Session 2)" },
+        { "when": "Days 2–4", "what": "The Guard cordons the Deep Well Ranch neighborhood as a civilian safe zone — 'Operation Hearthstone.' Getting home becomes impossible. (Act II begins)" },
+        { "when": "Days 5–8", "what": "Two refuges run in parallel: the safe zone (order with a shadow) and Rick's compound (freedom on a knife's edge). Cracks show — disappearances inside the wire, supply strain, the dead piling up as people die of ordinary causes inside the walls." },
+        { "when": "Days 9–11", "what": "Military lines elsewhere break. Love Field gets evac orders. Command quietly activates 'Operation Ashfall' — abandon and sanitize the zone. The cure rumor (a federal field lab in Phoenix) starts circulating. A massive horde converges on the basin." },
+        { "when": "Days 12–14", "what": "The Catastrophe. Ashfall executes amid a horde breach. Whatever refuge the players held becomes untenable. In the chaos they get the lead that pulls them out. (Act III / Finale)" },
+        { "when": "Week 2+", "what": "Government presence collapses entirely. The high desert is on its own." }
+      ],
+      "acts": [
+        { "id": "act1", "title": "Act I — The Road", "days": "Days 0–1", "summary": "The I-17 Snow Trap and the scramble off the highway. Goal: get home. It slowly becomes impossible. First contact with Radio Rick. Act I ends when 'go home' stops being a plan. (Sessions 1–2.)" },
+        { "id": "act2", "title": "Act II — Nowhere to Go", "days": "Days 2–10", "summary": "The cordon goes up and the map forks toward two refuges — the Safe Zone (Deep Well Ranch / 'Operation Hearthstone') and Rick's Compound. The vet clinic and Whiskey Row fire become travel/supply set-pieces. Seed the rot: people vanish inside the wire, the larder shrinks, the dead pile up because everyone who dies inside still turns." },
+        { "id": "act3", "title": "Act III — The Fall & The Lead", "days": "Days 11–14", "summary": "The Catastrophe — Ashfall executes as a basin-sized horde breaches the half-abandoned cordon; whatever refuge the players held becomes untenable. The Lead surfaces: a rumored federal field-research lab in Phoenix ('the cure'), almost certainly unreliable. The finale forces a choice with no right answer." }
+      ],
+      "refuges": [
+        { "name": "The Safe Zone — Deep Well Ranch ('Operation Hearthstone')", "desc": "Chain-link and concertina wire, floodlights, cots in a school gym, hot food, a doctor with a clipboard, soldiers who say you're safe now. Then the details itch: screening that can't work (everyone is already infected), bodies that start to move in the back lot, order at gunpoint, a commander doing impossible math. A pressure cooker of restriction — safe enough to want to stay, wrong enough that staying scares you." },
+        { "name": "The Compound — Rick's Place (Chino/Paulden)", "desc": "Several acres: a double-wide and outbuildings, a hand-pump well, chickens, two horses, a fuel cache, shelves of canned goods, and a man who saw this coming and is furious he was right. Freedom with a knife's edge — the larder was stocked for one paranoid man, defense is thin. A project: fortify, farm, decide who you take in. A future worth fighting for, which is what makes Act III hurt." }
+      ],
+      "catastrophe": "On the worst possible night three things happen at once: (1) Ashfall executes — the Guard pulls guards off the wire to cover the airfield and preps the last plane; (2) the horde hits the cordon — days of fire and noise have drawn an ocean of dead, and with the wire half-abandoned it breaches; (3) the refuge fails — whatever home the players built is suddenly indefensible. The world evicts them, all at once, in the dark, on fire.",
+      "finale": "The catastrophe funnels everyone toward the airport. Offer at least three real options, each with a true cost: ① The Plane (Guard evac — safety, surrender autonomy); ② Phoenix (chase the cure into the epicenter — hope, probably a lie); ③ The Compound (dig in); ④ optional The High Country (strike out north). There is no correct answer. End on the table making the choice — and let the last image be theirs.",
+      "sessions": [
+        {
+          "id": "s1", "number": 1, "act": "act1", "title": "The Snow Trap",
+          "subtitle": "The slow burn that teaches the table how this world ends: quietly, then all at once.",
+          "situation": "The players are crammed into an SUV heading south on I-17 toward Phoenix for a Disneyland trip — wrong clothes, good mood, half a tank. Two days of storms left deep snowbanks on the shoulders and a wide median of pristine snow hiding a foot of freezing mud. Near Sunset Point, traffic stops dead. The radio crackles into a state of emergency: Maricopa County is closed.",
+          "readAlouds": [
+            "The brake lights ahead bloom red and don't move. Then the car behind. Then everyone. Somewhere up the line a horn starts and doesn't stop. On the radio, the DJ's voice cracks mid-sentence — '…asking everyone, please, do not attempt to enter Maricopa County, the interstate is—' and then just the emergency tone. Outside, the first fat flakes start coming down again. The dashboard clock reads 4:51 PM. The temperature gauge reads 30°F and dropping.",
+            "(The turn) You don't see it happen so much as hear it. A wet, surprised sound. Then Sarah's voice — not screaming now, something worse, a small confused 'no, baby, no—' And under the moon you can just make out the shape of the boy in her arms, moving."
+          ],
+          "phases": [
+            { "title": "Phase 1 — Mundane Frustration (Hours 1–2)", "body": "Let it breathe. Roleplay and worldbuilding. The horror lands only if the boredom and cold feel real first.", "beats": [
+              "It gets dark and below freezing. Running the heater eats fuel (start the Fuel clock).",
+              "The Median Question: a lifted pickup guns it and bogs to its axles. The lesson isn't 'you can't cross' — it's 'you can't cross like that.'",
+              "Meet Mac (aggressive trucker, going car to car) and Sarah & Leo (mother and feverish son in the minivan beside them). Make the players like Sarah."
+            ] },
+            { "title": "Phase 2 — The Silent Tragedy (Hours 3–4)", "body": "", "beats": [
+              "Leo dies. A paramedic sprints from a trapped ambulance, does CPR in the snow. It fails. (Advance the Wakes clock by 1.)",
+              "Engines go silent one by one as people ration gas. Full dark.",
+              "The Cold System bites now: warm and watching their fuel die, or cold and saving it."
+            ] },
+            { "title": "Phase 3 — The Awakening (Hour 5)", "body": "", "beats": [
+              "Leo reanimates in Sarah's arms and bites her neck. The paramedic gets bitten, panics, crashes the ambulance into the median.",
+              "It cascades. Everyone who died hours ago wakes up — many Trapped in seatbelts, some fresh and fast (Wakers). Fill the Wakes clock. The night is now open chaos."
+            ] }
+          ],
+          "decision": "Once the highway erupts, every group faces the same fork: run for the exit, or stay and shelter. Option A — Push North (median crossing → northbound crash → one-mile hike). Option B — Sunset Point: the crowded ark (the trap; run the hidden 'Someone Dies Inside' clock). Option C — the Snowplow (the only thing that turns the road passable; earned, not free). Option D — Hold Fast (the safe, slow route; cross at dawn). However they choose, they should end the night on foot near Cordes, cold and changed.",
+          "checksClocks": [
+            "Clock — The Highway Wakes (0/6): fills as people die and as the players make noise. When full, the slaughter becomes general.",
+            "Clock — Someone Dies Inside (0/6): the hidden Sunset Point ark clock.",
+            "Clock — Fuel: idling with the heater burns ~a quarter-tank per 2–3 hours.",
+            "Median crossing skill challenge: 3 successes before 2 failures (Wits Hard / Agility Desperate / Brawn Desperate), shadowed by Cold."
+          ],
+          "branches": [
+            { "name": "Sarah, Anywhere", "body": "Sarah and Leo are the emotional anchor; the slow-turn tragedy (fever → death → reanimation, ~Hour 5) should land wherever the players are. Drop them at the jam, the rest area, or on the hike. The only thing that matters is that the players know her a little before it happens." }
+          ],
+          "npcFates": [
+            "Sarah / Leo: the emotional anchor. Sarah is almost certainly lost — but how the players respond defines the table's tone.",
+            "The Paramedic: bitten, doomed (1d6 days), but useful and willing meanwhile.",
+            "Mac: if he lives, a recurring wildcard."
+          ],
+          "rewards": "Cold-weather gear (the real prize), scavenged supplies, maybe the snowplow, and 1 Grit each. Anyone who held a friend together through the dark earns a small Composure boon. Most groups end the night on foot near Cordes Junction."
+        },
+        {
+          "id": "s2", "number": 2, "act": "act1", "title": "Cordes Junction & the Ham Radio",
+          "subtitle": "Mobile again, but the world's gotten quieter and meaner. Resource pressure and a voice on the radio.",
+          "situation": "The players reach Cordes Lakes. The gas stations are stripped bare, and a massive pile-up chokes I-17 north toward Prescott. They need fuel, gear, and a way around — and they hear Radio Rick for the first time.",
+          "readAlouds": [
+            "The CB hisses, then a man's voice cuts in — clipped, tired, talking too fast. '—anyone on this band, this is Rick out of Chino Valley, repeat, Radio Rick. Military's standing up an airlift at Prescott Regional, you hear me? Love Field. But the perimeter's leaking and I got walkers at my fence line and I am one man with a deer rifle. You help me hold tonight, I'll get you the safe route to that airfield. That's the deal. Somebody answer me.'"
+          ],
+          "phases": [
+            { "title": "Beats & Challenges", "body": "", "beats": [
+              "Fuel & Gear: siphon abandoned cars (Agility/Wits), scavenge looted stations and the pile-up (Wits, Hard). Cold gear and food remain priorities.",
+              "The Pile-Up: I-17 north is blocked. The way west is SR-69, but military blockades sit on the main routes. Finding the backroads through Mayer is a Wits (navigation) play.",
+              "Radio Rick's Bargain: answering Rick gives a goal (the airfield), a route, and an ally — if they'll detour and help defend his trailer later. Establish his voice now; intrigue, not trust."
+            ] }
+          ],
+          "decision": "",
+          "checksClocks": ["Cold-Stiff cluster thawing around a still-warm wreck — a quiet, eerie fight that punishes loud solutions (Horde clock)."],
+          "branches": [
+            { "name": "Complications (pick 1–2)", "body": "A blockade encounter (Guardsmen turning back travelers — Charm standoff, risky bypass, or watching what happens when a carrier dies at the checkpoint). Fellow travelers at a station — allies, ambush, or competition for fuel. A Cold-Stiff cluster." }
+          ],
+          "npcFates": ["Radio Rick: voice established; the relationship begins."],
+          "rewards": "Fuel, gear, a working route west, the Radio Rick relationship, and 1 Grit each."
+        },
+        {
+          "id": "s3", "number": 3, "act": "act2", "title": "The Vet Clinic Siege (Dewey-Humboldt)",
+          "subtitle": "Not every wound is a bite — but every wound is a clock. A medical crisis becomes a standoff with the living.",
+          "situation": "On SR-69 into the Quad Cities, someone takes a bad, non-bite injury that needs antibiotics or stitches before it goes septic. The hospitals are burning. The only option is a large veterinary clinic in Dewey — animal antibiotics and surgical kit are real, usable, and exactly what's needed. It's held by Dr. Elena Rosas and frightened, well-armed ranchers, and a herd is gathering at the edges.",
+          "readAlouds": [
+            "The clinic's a low cinderblock building with a gravel lot, ringed by trucks parked nose-out like a wagon circle. Floodlights on a generator. As you roll up, a porch light snaps on and a rifle barrel comes to rest on a truck hood. A woman's voice, steady and not unkind: 'That's close enough. We're full up. There's nothing here for you. Turn around.'"
+          ],
+          "phases": [
+            { "title": "The Conflict — three broad approaches (mix freely)", "body": "The ranchers are not villains. A herd of walkers, drawn by the generator's hum and lights, is gathering. (Start a Horde clock.)", "beats": [
+              "Charm — Negotiate. Convince Rosas you're worth the risk (labor, fuel, the snowplow's muscle, news of the airlift, a skill). Opposed Charm; her fear is the difficulty.",
+              "Wits — Sneak. Slip in the back while the ranchers watch the front. A gunshot fills the Horde clock fast — and endangers them too.",
+              "Brawn — Force. Fastest, ugliest; can spark a firefight that draws the whole herd. Pyrrhic by design."
+            ] },
+            { "title": "The Pressure Valve", "body": "The smartest play emerges naturally — the herd is everyone's problem. If the players help the ranchers fight it off (or lure it away with the snowplow's engine and lights), Rosas opens the door. Cooperation written into the situation, not forced.", "beats": [] }
+          ],
+          "decision": "",
+          "checksClocks": ["Horde clock — drawn by the generator and lights; gunshots fill it fast."],
+          "branches": [],
+          "npcFates": [
+            "Dr. Elena Rosas — Charm 12, Wits 13. Will trade care for trust earned. A possible long-term ally and a source of hard truths about the infection.",
+            "The Ranchers — scared, capable, with deer rifles and a lot to protect. Defenders, not aggressors."
+          ],
+          "rewards": "Medicine and a stabilized ally, possibly Rosas's friendship (and her clinic as a fallback), real-world intel on the airlift and the dead, and 1 Grit each."
+        },
+        {
+          "id": "s4", "number": 4, "act": "act2", "title": "Whiskey Row Fire",
+          "subtitle": "The set-piece. To go forward, the players cross a burning downtown swarming with hundreds of the dead.",
+          "situation": "The route to Chino Valley and the airport runs through downtown Prescott. A massive fire has erupted on Whiskey Row — historic wooden saloons going up like kindling — and the Courthouse Plaza is a sea of hundreds of walkers, every one lit and moving in the firelight, drawn by the flames and the noise.",
+          "readAlouds": [
+            "You smell it before you see it — woodsmoke and something underneath it you don't want to name. Then you crest the hill and there it is: Whiskey Row, a wall of fire two stories high, and in front of it the courthouse square, and the square is moving. Hundreds of them, more, shoulder to shoulder, faces orange in the firelight, all of them swaying toward the heat and the sound. There is no driving through that."
+          ],
+          "phases": [
+            { "title": "The Challenge — abandon the vehicle, cross on foot", "body": "Thread the alleys and side streets around the horde, not through it.", "beats": [
+              "Smoke Hazards: smoke-choked passages force Brawn checks; the fire is warm, which is its own deadly temptation in the freezing night.",
+              "Stay Quiet: a stealth and nerve gauntlet, not a fight. Agility to move silently, Wits to pick the safe route, Composure when a Waker lurches out. Any loud action ticks the Horde clock.",
+              "Hard Choices: a collapsing building blocks the easy route; a trapped survivor cries for help; the snowplow won't fit the alleys and must be left behind."
+            ] }
+          ],
+          "decision": "",
+          "checksClocks": [
+            "Run it as a race between two clocks: 'Across' (0/6) fills as they make progress through the alleys, versus 'The Horde Turns' (0/6) fills with every noise and misstep. Fill Across first."
+          ],
+          "branches": [],
+          "npcFates": [],
+          "rewards": "Survival, a story they'll retell, maybe a rescued survivor or a hard goodbye, and 1 Grit each. Top off Composure if they kept their cool through the firelight."
+        },
+        {
+          "id": "s5", "number": 5, "act": "act3", "title": "Extraction or Exile (Finale)",
+          "subtitle": "The plane is real. So is the cost. The players choose what kind of survivors they are.",
+          "situation": "The players reach Chino Valley and finally meet Radio Rick in the flesh — wiry, paranoid, decent, holed up in a fortified compound. He gives them the breach point in the airport fence and the truth: the military is pulling out early. The perimeter at Love Field is failing, and the last C-130 is loading now. (Run the catastrophe — Ashfall, the horde breach, the refuge failing — as the engine that funnels everyone to the tarmac. Then offer the choice.)",
+          "readAlouds": [
+            "Rick lowers the binoculars. 'There. See the tail ramp's still down? That's your bird. But look at the fence line, east side — they already pulled the guards off it to plug the south gate. Hole's there if you want it. But I'll tell you straight: you get on that plane, you give up your guns, your say, all of it, and you trust the same government that locked you on that highway. Or—' he nods back at the compound, the generators, the walls, '—you stay. Build something. Out here, with us. Your call. But it's gotta be now.'"
+          ],
+          "phases": [
+            { "title": "The Climax — The Tarmac Run", "body": "If they go for the plane: a single, breathless sequence. One hour, then it's gone.", "beats": [
+              "Breach the fence (Agility/Wits at the weak point Rick named).",
+              "Cross the tarmac — open ground, dodging walkers flooding the failing perimeter AND nervous military gunfire. A gauntlet of Agility, Composure, and split-second calls.",
+              "Reach the ramp before it closes. Run it as a tight clock; let individual heroics and sacrifices matter."
+            ] }
+          ],
+          "decision": "There's no right answer — only the players' answer. ① The Plane (Ashfall evac): salvation on the government's terms — surrender weapons and autonomy, fly to a staging area that's already rotting from within. ② Phoenix (chase the Lead): turn toward the fire, betting everything the lab and the cure are real. The most desperate, most hopeful, most likely-a-lie option. ③ The Compound (dig in): fall back to Rick's land, raise the walls, outlast the apocalypse. ④ (Optional) The High Country: abandon plane, lab, and compound for the wilderness north up 89.",
+          "checksClocks": ["The Tarmac Run — a tight clock; the ramp closes in one hour."],
+          "branches": [],
+          "npcFates": ["Radio Rick: met in the flesh; the compound future is his offer."],
+          "rewards": "Run a round-the-table epilogue: where each survivor ends up, what they carried out, who they lost, what they swore. The compound ending is a ready-made sandbox; the plane ending opens a whole 'safe zone falls from within' arc."
+        }
+      ],
+      "designNotes": "Three clocks run in parallel beneath everything — the Players' Journey, Operation Hearthstone → Ashfall, and the Collapse. Keep all three ticking. The real CDC is in Atlanta; frame the Phoenix site as a CDC/federal field-response lab kept a rumor and possibly false — do not 'correct' it to Atlanta or confirm the cure.",
+      "_seed": true
+    }
+  ]
+}

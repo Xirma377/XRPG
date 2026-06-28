@@ -1,0 +1,32 @@
+{
+  "collection": "characters",
+  "docs": [
+    {
+      "id": "pc_dana", "name": "Dana Cole", "kind": "pc", "systemId": "sys_strainz", "playerId": "plr_sam",
+      "role": "Off-Duty Nurse", "background": "Off-Duty Nurse", "portraitSeed": "dana-cole-nurse",
+      "attrs": { "brawn": 9, "agility": 10, "wits": 14, "charm": 11 },
+      "knacks": ["Medicine & stabilizing the wounded"],
+      "gear": ["Trauma kit", "Scrubs (extra layer)", "Penlight"],
+      "tie": "Her younger brother, back home in Prescott", "fear": "Watching a child die",
+      "grit": 0, "tags": ["party"], "notes": "Calm in a crisis, falling apart in the quiet after."
+    },
+    {
+      "id": "pc_marcus", "name": "Marcus Reed", "kind": "pc", "systemId": "sys_strainz", "playerId": "plr_jordan",
+      "role": "Mechanic", "background": "Mechanic", "portraitSeed": "marcus-reed-mechanic",
+      "attrs": { "brawn": 12, "agility": 12, "wits": 10, "charm": 8 },
+      "knacks": ["Repairs, hotwiring, siphoning"],
+      "gear": ["Toolbox", "Flashlight", "Siphon hose", "Half-tank fuel can"],
+      "tie": "His daughter's car seat in the back of the SUV", "fear": "Being trapped in a confined space",
+      "grit": 0, "tags": ["party"], "notes": "Quiet, practical, keeps the vehicle alive."
+    },
+    {
+      "id": "pc_ellie", "name": "Ellie Park", "kind": "pc", "systemId": "sys_strainz", "playerId": "plr_alex",
+      "role": "College Athlete", "background": "College Athlete", "portraitSeed": "ellie-park-athlete",
+      "attrs": { "brawn": 11, "agility": 14, "wits": 9, "charm": 10 },
+      "knacks": ["Climbing, sprinting, leaping"],
+      "gear": ["Good shoes (rare!)", "Water bottle"],
+      "tie": "The teammates she was driving down to meet", "fear": "Freezing — she hates the cold",
+      "grit": 0, "tags": ["party"], "notes": "Fast, brave, sometimes reckless."
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "collection": "scenes",
+  "docs": [
+    {
+      "id": "scene_snowtrap",
+      "name": "I-17 Snow Trap",
+      "campaignId": null,
+      "mapKind": "highway",
+      "w": 1200, "h": 800,
+      "grid": { "type": "square", "size": 50, "visible": true, "snap": true, "color": "rgba(255,255,255,0.09)" },
+      "tokens": [
+        { "id": "tok_dana", "name": "Dana", "kind": "pc", "x": 575, "y": 425, "size": 1, "color": "#5bd0a0", "label": "Da", "charId": "pc_dana", "hp": { "cur": 15, "max": 15 }, "conditions": [] },
+        { "id": "tok_marcus", "name": "Marcus", "kind": "pc", "x": 625, "y": 425, "size": 1, "color": "#6fa8ff", "label": "Ma", "charId": "pc_marcus", "hp": { "cur": 18, "max": 18 }, "conditions": [] },
+        { "id": "tok_ellie", "name": "Ellie", "kind": "pc", "x": 575, "y": 475, "size": 1, "color": "#ff6b9d", "label": "El", "charId": "pc_ellie", "hp": { "cur": 17, "max": 17 }, "conditions": [] },
+        { "id": "tok_waker1", "name": "Waker", "kind": "threat", "x": 425, "y": 275, "size": 1, "color": "#ff7a6b", "label": "Wk", "conditions": ["Fast"] },
+        { "id": "tok_waker2", "name": "Waker", "kind": "threat", "x": 775, "y": 575, "size": 1, "color": "#ff7a6b", "label": "Wk", "conditions": [] }
+      ],
+      "fog": { "enabled": false, "revealed": [] },
+      "drawings": [],
+      "_seed": true
+    }
+  ]
+}

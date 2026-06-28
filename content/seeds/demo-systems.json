@@ -1,0 +1,103 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_d20fantasy",
+      "name": "Heroes & Hazards",
+      "tagline": "d20 roll-high fantasy adventure",
+      "version": "1.0",
+      "summary": "A familiar d20 engine: roll 1d20, add your ability modifier, and meet or beat the Difficulty Class. Natural 20 crits, natural 1 fumbles. A clean demonstration that XRPG drives roll-high systems as easily as roll-under.",
+      "theme": { "accent": "#e8b04b", "accent2": "#c98a2f", "cool": "#8fcf9f", "displayFont": "Spectral", "titleFont": "Spectral", "monoFont": "Share Tech Mono", "mood": "heroic" },
+      "dice": {
+        "notation": "1d20",
+        "resolution": "roll-high",
+        "summary": "Roll 1d20 + ability modifier ≥ DC. Natural 20 = critical success, natural 1 = critical failure.",
+        "crit": { "success": [20], "failure": [1] }
+      },
+      "attributes": [
+        { "key": "str", "name": "Strength", "abbr": "STR", "default": 10, "min": 3, "max": 20, "desc": "Melee power, lifting, athletics." },
+        { "key": "dex", "name": "Dexterity", "abbr": "DEX", "default": 10, "min": 3, "max": 20, "desc": "Agility, aim, reflexes, stealth." },
+        { "key": "con", "name": "Constitution", "abbr": "CON", "default": 10, "min": 3, "max": 20, "desc": "Health, stamina, resilience." },
+        { "key": "int", "name": "Intelligence", "abbr": "INT", "default": 10, "min": 3, "max": 20, "desc": "Reason, lore, investigation." },
+        { "key": "wis", "name": "Wisdom", "abbr": "WIS", "default": 10, "min": 3, "max": 20, "desc": "Perception, insight, willpower." },
+        { "key": "cha", "name": "Charisma", "abbr": "CHA", "default": 10, "min": 3, "max": 20, "desc": "Presence, persuasion, deception." }
+      ],
+      "attributeRules": { "start": 10, "startMin": 3, "startMax": 18 },
+      "deriveds": [
+        { "key": "str_mod", "name": "STR mod", "abbr": "STR", "formula": "floor((str-10)/2)" },
+        { "key": "dex_mod", "name": "DEX mod", "abbr": "DEX", "formula": "floor((dex-10)/2)" },
+        { "key": "con_mod", "name": "CON mod", "abbr": "CON", "formula": "floor((con-10)/2)" },
+        { "key": "int_mod", "name": "INT mod", "abbr": "INT", "formula": "floor((int-10)/2)" },
+        { "key": "wis_mod", "name": "WIS mod", "abbr": "WIS", "formula": "floor((wis-10)/2)" },
+        { "key": "cha_mod", "name": "CHA mod", "abbr": "CHA", "formula": "floor((cha-10)/2)" },
+        { "key": "ac", "name": "Armor Class", "abbr": "AC", "formula": "10 + dex_mod", "desc": "Base unarmored AC." },
+        { "key": "hp", "name": "Hit Points", "abbr": "HP", "formula": "8 + con_mod", "min": 1, "resource": true, "desc": "Level 1 hit points (d8 class)." },
+        { "key": "init", "name": "Initiative", "abbr": "INIT", "formula": "dex_mod" }
+      ],
+      "dcLadder": [
+        { "name": "Very Easy", "dc": 5 }, { "name": "Easy", "dc": 10 }, { "name": "Medium", "dc": 15 },
+        { "name": "Hard", "dc": 20 }, { "name": "Very Hard", "dc": 25 }, { "name": "Nearly Impossible", "dc": 30 }
+      ],
+      "conditions": [
+        { "name": "Prone", "effect": "Disadvantage on attacks; melee attackers have advantage." },
+        { "name": "Grappled", "effect": "Speed 0." },
+        { "name": "Frightened", "effect": "Disadvantage while the source is in sight; can't approach it." },
+        { "name": "Poisoned", "effect": "Disadvantage on attacks and ability checks." }
+      ],
+      "rollPresets": [
+        { "name": "Strength check", "attr": "str_mod", "ease": "Medium" },
+        { "name": "Dexterity check", "attr": "dex_mod", "ease": "Medium" },
+        { "name": "Attack roll", "attr": "str_mod", "ease": "Medium", "note": "vs target AC" },
+        { "name": "Stealth", "attr": "dex_mod", "ease": "Medium" },
+        { "name": "Perception", "attr": "wis_mod", "ease": "Medium" },
+        { "name": "Persuasion", "attr": "cha_mod", "ease": "Medium" }
+      ],
+      "npcStatFormat": "STR / DEX / CON / INT / WIS / CHA | AC | HP",
+      "reference": [
+        { "id": "h20-core", "title": "The Core Roll", "category": "Core Rules", "tags": ["d20", "check", "dc"], "body": "To act under pressure, roll **1d20** and add the relevant **ability modifier**. If the total **meets or beats** the **Difficulty Class (DC)** set by the GM, you succeed.\n\n**Ability modifier** = (score − 10) ÷ 2, rounded down. A 14 gives +2, an 8 gives −1.\n\n| DC | Difficulty |\n|---|---|\n| 5 | Very Easy |\n| 10 | Easy |\n| 15 | Medium |\n| 20 | Hard |\n| 25 | Very Hard |" },
+        { "id": "h20-crit", "title": "Criticals & Advantage", "category": "Core Rules", "tags": ["crit", "advantage"], "body": "- **Natural 20** on an attack is a **critical hit** — roll damage dice twice.\n- **Natural 1** is an automatic miss / fumble.\n- **Advantage:** roll 2d20, keep the higher. **Disadvantage:** roll 2d20, keep the lower." }
+      ],
+      "_seed": true
+    },
+    {
+      "id": "sys_pbta_hearts",
+      "name": "Hearts on Fire",
+      "tagline": "2d6+stat narrative play",
+      "version": "1.0",
+      "summary": "A Powered-by-the-Apocalypse style system: roll 2d6 and add a stat. 10+ is a strong hit, 7–9 a hit with a cost, 6 or under a miss (and the GM makes a move). Demonstrates XRPG's support for narrative dice math with success bands.",
+      "theme": { "accent": "#ff6b9d", "accent2": "#d8467a", "cool": "#9d8fff", "displayFont": "Oswald", "titleFont": "Oswald", "monoFont": "Share Tech Mono", "mood": "romantic" },
+      "dice": {
+        "notation": "2d6",
+        "resolution": "pbta",
+        "summary": "Roll 2d6 + stat. 10+ strong hit, 7–9 hit with a cost, 6− miss (mark XP, GM makes a move)."
+      },
+      "attributes": [
+        { "key": "bold", "name": "Bold", "abbr": "BLD", "default": 0, "min": -2, "max": 3, "desc": "Acting under fire, going loud, taking the leap." },
+        { "key": "cunning", "name": "Cunning", "abbr": "CUN", "default": 0, "min": -2, "max": 3, "desc": "Schemes, finesse, reading a situation." },
+        { "key": "heart", "name": "Heart", "abbr": "HRT", "default": 0, "min": -2, "max": 3, "desc": "Empathy, persuasion, opening up." },
+        { "key": "wise", "name": "Wise", "abbr": "WIS", "default": 0, "min": -2, "max": 3, "desc": "Insight, reading people, knowing things." }
+      ],
+      "attributeRules": { "start": 0, "startMin": -1, "startMax": 2 },
+      "deriveds": [
+        { "key": "harm", "name": "Harm", "abbr": "HRM", "formula": "0", "max": 4, "resource": true, "desc": "Wounds taken (0–4). At 4 you're out of the scene." }
+      ],
+      "conditions": [
+        { "name": "Angry", "effect": "−1 to comfort or support others until you act on it." },
+        { "name": "Frightened", "effect": "−1 to go aggro or seize by force." },
+        { "name": "Insecure", "effect": "−1 to manipulate or hold steady." }
+      ],
+      "rollPresets": [
+        { "name": "Act Boldly", "attr": "bold", "note": "When you do something risky or aggressive." },
+        { "name": "Scheme (Cunning)", "attr": "cunning", "note": "When you finesse, sneak, or plan." },
+        { "name": "Reach Out (Heart)", "attr": "heart", "note": "When you persuade or open up." },
+        { "name": "Read the Room (Wise)", "attr": "wise", "note": "When you study a person or situation." }
+      ],
+      "npcStatFormat": "Bold / Cunning / Heart / Wise | Harm",
+      "reference": [
+        { "id": "pbta-core", "title": "Rolling the Dice", "category": "Core Rules", "tags": ["2d6", "moves", "hit"], "body": "When a move tells you to roll, throw **2d6 and add the listed stat**.\n\n- **10+** — **strong hit.** You do it, clean.\n- **7–9** — **hit with a cost.** You do it, but the GM offers a hard bargain, a cost, or a complication.\n- **6 or less** — **miss.** Mark XP, and the GM makes a move against you.\n\nThe fiction comes first: only roll when a move actually triggers." },
+        { "id": "pbta-harm", "title": "Harm", "category": "Core Rules", "tags": ["harm", "damage"], "body": "Harm is tracked 0–4. Each level makes you more desperate; at **4 Harm** you're out of the scene — captured, unconscious, or worse. Rest and care clear Harm between scenes." }
+      ],
+      "_seed": true
+    }
+  ]
+}

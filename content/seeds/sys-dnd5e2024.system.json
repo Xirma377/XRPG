@@ -1,0 +1,429 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_dnd5e2024",
+      "name": "Dungeons & Dragons",
+      "tagline": "The d20 fantasy adventure standard",
+      "version": "5E (2024) — SRD 5.2 (CC-BY-4.0)",
+      "author": "Wizards of the Coast (SRD 5.2, CC-BY-4.0)",
+      "summary": "The 2024 revision of the world's most popular roleplaying game, built on the System Reference Document 5.2 released under Creative Commons Attribution 4.0. Roll 1d20, add an ability modifier and proficiency, and meet or beat a Difficulty Class. This seed covers core resolution, combat, conditions, and a roster of iconic SRD monsters.",
+      "theme": {
+        "accent": "#c0392b",
+        "accent2": "#9a2617",
+        "cool": "#d4af37",
+        "displayFont": "Spectral",
+        "titleFont": "Spectral",
+        "monoFont": "Share Tech Mono",
+        "mood": "heroic"
+      },
+      "dice": {
+        "notation": "1d20",
+        "resolution": "roll-high",
+        "summary": "Roll 1d20 + ability modifier (+ proficiency if applicable) and meet or beat the DC. Natural 20 = critical success, natural 1 = critical failure.",
+        "crit": { "success": [20], "failure": [1] }
+      },
+      "attributes": [
+        { "key": "str", "name": "Strength", "abbr": "STR", "default": 10, "min": 1, "max": 30, "desc": "Physical power — melee attacks, lifting, Athletics, and breaking things." },
+        { "key": "dex", "name": "Dexterity", "abbr": "DEX", "default": 10, "min": 1, "max": 30, "desc": "Agility and reflexes — ranged and finesse attacks, AC, initiative, Stealth, Acrobatics." },
+        { "key": "con", "name": "Constitution", "abbr": "CON", "default": 10, "min": 1, "max": 30, "desc": "Health and stamina — hit points, concentration saves, endurance." },
+        { "key": "int", "name": "Intelligence", "abbr": "INT", "default": 10, "min": 1, "max": 30, "desc": "Reasoning and memory — Arcana, History, Investigation, Nature, Religion, wizard spellcasting." },
+        { "key": "wis", "name": "Wisdom", "abbr": "WIS", "default": 10, "min": 1, "max": 30, "desc": "Awareness and insight — Perception, Insight, Medicine, Survival, cleric/druid spellcasting." },
+        { "key": "cha", "name": "Charisma", "abbr": "CHA", "default": 10, "min": 1, "max": 30, "desc": "Force of personality — Persuasion, Deception, Intimidation, Performance, bard/sorcerer/warlock spellcasting." }
+      ],
+      "attributeRules": {
+        "start": 10,
+        "startMin": 3,
+        "startMax": 18,
+        "note": "Standard array (15, 14, 13, 12, 10, 8) or Point Buy (27 points, scores 8–15 before species bonuses). After assigning, apply a +2 and a +1 (or three +1s) from your background. Cap at creation is 20; magic can raise an ability to 30."
+      },
+      "deriveds": [
+        { "key": "str_mod", "name": "STR modifier", "abbr": "STR", "formula": "floor((str-10)/2)", "desc": "Strength modifier = (Strength − 10) ÷ 2, rounded down." },
+        { "key": "dex_mod", "name": "DEX modifier", "abbr": "DEX", "formula": "floor((dex-10)/2)", "desc": "Dexterity modifier = (Dexterity − 10) ÷ 2, rounded down." },
+        { "key": "con_mod", "name": "CON modifier", "abbr": "CON", "formula": "floor((con-10)/2)", "desc": "Constitution modifier = (Constitution − 10) ÷ 2, rounded down." },
+        { "key": "int_mod", "name": "INT modifier", "abbr": "INT", "formula": "floor((int-10)/2)", "desc": "Intelligence modifier = (Intelligence − 10) ÷ 2, rounded down." },
+        { "key": "wis_mod", "name": "WIS modifier", "abbr": "WIS", "formula": "floor((wis-10)/2)", "desc": "Wisdom modifier = (Wisdom − 10) ÷ 2, rounded down." },
+        { "key": "cha_mod", "name": "CHA modifier", "abbr": "CHA", "formula": "floor((cha-10)/2)", "desc": "Charisma modifier = (Charisma − 10) ÷ 2, rounded down." },
+        { "key": "proficiency", "name": "Proficiency Bonus", "abbr": "PB", "formula": "2", "min": 2, "max": 6, "desc": "Added to rolls you're proficient with. Starts at +2 (levels 1–4) and rises with level, up to +6 at level 17+. Shown here at its level-1 value." },
+        { "key": "ac", "name": "Armor Class", "abbr": "AC", "formula": "10 + dex_mod", "desc": "Base unarmored AC (10 + Dexterity modifier). Armor and shields replace or add to this." },
+        { "key": "hp", "name": "Hit Points", "abbr": "HP", "formula": "8 + con_mod", "min": 1, "resource": true, "desc": "Level-1 placeholder (d8 hit die + Constitution modifier). Each class sets the actual hit-die size." },
+        { "key": "initiative", "name": "Initiative", "abbr": "INIT", "formula": "dex_mod", "desc": "A Dexterity check made at the start of combat to set turn order." },
+        { "key": "passive_perception", "name": "Passive Perception", "abbr": "PP", "formula": "10 + wis_mod", "desc": "Your steady-state ability to notice things (10 + Wisdom modifier, plus proficiency if proficient in Perception)." }
+      ],
+      "dcLadder": [
+        { "name": "Very Easy", "dc": 5 },
+        { "name": "Easy", "dc": 10 },
+        { "name": "Medium", "dc": 15 },
+        { "name": "Hard", "dc": 20 },
+        { "name": "Very Hard", "dc": 25 },
+        { "name": "Nearly Impossible", "dc": 30 }
+      ],
+      "conditions": [
+        { "name": "Blinded", "effect": "You can't see and automatically fail any check requiring sight. Attack rolls against you have Advantage, and your attack rolls have Disadvantage." },
+        { "name": "Charmed", "effect": "You can't attack the charmer or target them with harmful abilities or magical effects. The charmer has Advantage on ability checks to interact with you socially." },
+        { "name": "Deafened", "effect": "You can't hear and automatically fail any check requiring hearing." },
+        { "name": "Exhaustion", "effect": "Measured in levels (1–6). Each level imposes a cumulative −2 penalty to D20 Tests and reduces Speed by 5 feet per level. Level 6 is death. A Long Rest removes one level." },
+        { "name": "Frightened", "effect": "You have Disadvantage on ability checks and attack rolls while the source of fear is within line of sight, and you can't willingly move closer to the source." },
+        { "name": "Grappled", "effect": "Your Speed is 0 and can't increase. You have Disadvantage on attack rolls against any target other than the grappler. Ends if the grappler is Incapacitated or you're moved out of reach." },
+        { "name": "Incapacitated", "effect": "You can't take any action, Bonus Action, or Reaction, can't concentrate, and can't speak. If Incapacitated when rolling Initiative, you have Disadvantage on the roll." },
+        { "name": "Invisible", "effect": "You can't be seen without special senses (you're Heavily Obscured for being located). Attack rolls against you have Disadvantage; your attack rolls have Advantage. You have Advantage on Initiative." },
+        { "name": "Paralyzed", "effect": "You're Incapacitated and can't move or speak. You auto-fail Strength and Dexterity saves. Attacks against you have Advantage, and any attack that hits from within 5 feet is a Critical Hit." },
+        { "name": "Petrified", "effect": "You're transformed into a solid inanimate substance, Incapacitated, and unaware of surroundings. You have Resistance to all damage and Immunity to poison and disease. Attacks against you have Advantage; you auto-fail Strength and Dexterity saves." },
+        { "name": "Poisoned", "effect": "You have Disadvantage on attack rolls and ability checks." },
+        { "name": "Prone", "effect": "Your only movement option is to crawl (costing extra movement) unless you stand up. You have Disadvantage on attack rolls. Attacks against you have Advantage if the attacker is within 5 feet, otherwise Disadvantage." },
+        { "name": "Restrained", "effect": "Your Speed is 0 and can't increase. Attacks against you have Advantage and your attack rolls have Disadvantage. You have Disadvantage on Dexterity saving throws." },
+        { "name": "Stunned", "effect": "You're Incapacitated, can't move, and can speak only falteringly. You auto-fail Strength and Dexterity saves. Attack rolls against you have Advantage." },
+        { "name": "Unconscious", "effect": "You're Incapacitated, can't move or speak, are unaware of surroundings, drop what you're holding, and fall Prone. You auto-fail Strength and Dexterity saves. Attacks against you have Advantage, and any hit from within 5 feet is a Critical Hit." }
+      ],
+      "weapons": [
+        { "name": "Dagger", "damage": "1d4 piercing", "notes": "Finesse, Light, Thrown (20/60). 1 lb. Simple melee." },
+        { "name": "Shortsword", "damage": "1d6 piercing", "notes": "Finesse, Light. Martial melee." },
+        { "name": "Longsword", "damage": "1d8 slashing", "notes": "Versatile (1d10 two-handed). Martial melee." },
+        { "name": "Greatsword", "damage": "2d6 slashing", "notes": "Heavy, Two-Handed. Martial melee." },
+        { "name": "Greataxe", "damage": "1d12 slashing", "notes": "Heavy, Two-Handed. Martial melee." },
+        { "name": "Handaxe", "damage": "1d6 slashing", "notes": "Light, Thrown (20/60). Simple melee." },
+        { "name": "Mace", "damage": "1d6 bludgeoning", "notes": "Simple melee." },
+        { "name": "Quarterstaff", "damage": "1d6 bludgeoning", "notes": "Versatile (1d8). Simple melee." },
+        { "name": "Spear", "damage": "1d6 piercing", "notes": "Thrown (20/60), Versatile (1d8). Simple melee." },
+        { "name": "Shortbow", "damage": "1d6 piercing", "notes": "Ammunition, Range 80/320, Two-Handed. Simple ranged." },
+        { "name": "Longbow", "damage": "1d8 piercing", "notes": "Ammunition, Heavy, Range 150/600, Two-Handed. Martial ranged." },
+        { "name": "Light Crossbow", "damage": "1d8 piercing", "notes": "Ammunition, Loading, Range 80/320, Two-Handed. Simple ranged." },
+        { "name": "Heavy Crossbow", "damage": "1d10 piercing", "notes": "Ammunition, Heavy, Loading, Range 100/400, Two-Handed. Martial ranged." },
+        { "name": "Unarmed Strike", "damage": "1 + STR bludgeoning", "notes": "Or grapple/shove instead of damage." }
+      ],
+      "bestiary": [
+        {
+          "name": "Goblin",
+          "meta": "CR 1/4 · Small Fey (goblinoid)",
+          "hp": 7,
+          "ac": 15,
+          "statblock": "**Small Fey (goblinoid), Neutral Evil**\n\n**AC** 15 (leather armor, shield) · **HP** 7 (2d6) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 8 (−1) | 15 (+2) | 10 (+0) | 10 (+0) | 8 (−1) | 8 (−1) |\n\n**Skills** Stealth +6 · **Senses** Darkvision 60 ft., Passive Perception 9 · **CR** 1/4 (50 XP) · **PB** +2\n\n***Nimble Escape.*** The goblin takes the Disengage or Hide action as a Bonus Action on each of its turns.\n\n**Actions**\n***Scimitar.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 5 (1d6+2) slashing damage.\n***Shortbow.*** Ranged Attack: +4 to hit, range 80/320 ft. *Hit:* 5 (1d6+2) piercing damage.",
+          "tags": ["goblinoid", "fey", "humanoid", "cr-low"]
+        },
+        {
+          "name": "Kobold",
+          "meta": "CR 1/8 · Small Dragon",
+          "hp": 5,
+          "ac": 12,
+          "statblock": "**Small Dragon, Neutral**\n\n**AC** 12 · **HP** 5 (2d6−2) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 7 (−2) | 15 (+2) | 9 (−1) | 8 (−1) | 7 (−2) | 8 (−1) |\n\n**Senses** Darkvision 60 ft., Passive Perception 8 · **CR** 1/8 (25 XP) · **PB** +2\n\n***Pack Tactics.*** The kobold has Advantage on an attack roll against a creature if at least one of the kobold's allies is within 5 feet of the creature and the ally doesn't have the Incapacitated condition.\n***Sunlight Sensitivity.*** While in sunlight, the kobold has Disadvantage on attack rolls and Perception checks that rely on sight.\n\n**Actions**\n***Dagger.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 4 (1d4+2) piercing damage.",
+          "tags": ["dragon", "cr-low"]
+        },
+        {
+          "name": "Orc",
+          "meta": "CR 1/2 · Medium Humanoid",
+          "hp": 15,
+          "ac": 13,
+          "statblock": "**Medium Humanoid (orc), Chaotic Evil**\n\n**AC** 13 (hide armor) · **HP** 15 (2d8+6) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 16 (+3) | 12 (+1) | 16 (+3) | 7 (−2) | 11 (+0) | 10 (+0) |\n\n**Skills** Intimidation +2 · **Senses** Darkvision 60 ft., Passive Perception 10 · **CR** 1/2 (100 XP) · **PB** +2\n\n***Aggressive (Bonus Action).*** The orc moves up to its Speed toward an enemy it can see.\n\n**Actions**\n***Greataxe.*** Melee Attack: +5 to hit, reach 5 ft. *Hit:* 9 (1d12+3) slashing damage.\n***Javelin.*** Melee or Ranged Attack: +5 to hit, reach 5 ft. or range 30/120 ft. *Hit:* 6 (1d6+3) piercing damage.",
+          "tags": ["humanoid", "orc", "cr-low"]
+        },
+        {
+          "name": "Bandit",
+          "meta": "CR 1/8 · Medium Humanoid",
+          "hp": 11,
+          "ac": 12,
+          "statblock": "**Medium Humanoid, Neutral**\n\n**AC** 12 (leather armor) · **HP** 11 (2d8+2) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 11 (+0) | 12 (+1) | 12 (+1) | 10 (+0) | 10 (+0) | 10 (+0) |\n\n**Senses** Passive Perception 10 · **CR** 1/8 (25 XP) · **PB** +2\n\n**Actions**\n***Scimitar.*** Melee Attack: +3 to hit, reach 5 ft. *Hit:* 4 (1d6+1) slashing damage.\n***Light Crossbow.*** Ranged Attack: +3 to hit, range 80/320 ft. *Hit:* 5 (1d8+1) piercing damage.",
+          "tags": ["humanoid", "cr-low"]
+        },
+        {
+          "name": "Cultist",
+          "meta": "CR 1/8 · Medium Humanoid",
+          "hp": 9,
+          "ac": 12,
+          "statblock": "**Medium Humanoid, Neutral Evil**\n\n**AC** 12 (leather armor) · **HP** 9 (2d8) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 11 (+0) | 12 (+1) | 10 (+0) | 10 (+0) | 11 (+0) | 10 (+0) |\n\n**Skills** Deception +2, Religion +2 · **Senses** Passive Perception 10 · **CR** 1/8 (25 XP) · **PB** +2\n\n**Actions**\n***Ritual Sickle.*** Melee Attack: +3 to hit, reach 5 ft. *Hit:* 3 (1d4+1) slashing damage.",
+          "tags": ["humanoid", "cultist", "cr-low"]
+        },
+        {
+          "name": "Skeleton",
+          "meta": "CR 1/4 · Medium Undead",
+          "hp": 13,
+          "ac": 14,
+          "statblock": "**Medium Undead, Lawful Evil**\n\n**AC** 14 (armor scraps) · **HP** 13 (2d8+4) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 10 (+0) | 16 (+3) | 15 (+2) | 6 (−2) | 8 (−1) | 5 (−3) |\n\n**Vulnerabilities** Bludgeoning · **Immunities** Poison; Exhaustion, Poisoned · **Senses** Darkvision 60 ft., Passive Perception 9 · **CR** 1/4 (50 XP) · **PB** +2\n\n**Actions**\n***Shortsword.*** Melee Attack: +5 to hit, reach 5 ft. *Hit:* 6 (1d6+3) piercing damage.\n***Shortbow.*** Ranged Attack: +5 to hit, range 80/320 ft. *Hit:* 6 (1d6+3) piercing damage.",
+          "tags": ["undead", "cr-low"]
+        },
+        {
+          "name": "Zombie",
+          "meta": "CR 1/4 · Medium Undead",
+          "hp": 15,
+          "ac": 8,
+          "statblock": "**Medium Undead, Neutral Evil**\n\n**AC** 8 · **HP** 15 (2d8+6) · **Speed** 20 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 13 (+1) | 6 (−2) | 16 (+3) | 3 (−4) | 6 (−2) | 5 (−3) |\n\n**Saving Throws** Wis +0 · **Immunities** Poison; Poisoned · **Senses** Darkvision 60 ft., Passive Perception 8 · **CR** 1/4 (50 XP) · **PB** +2\n\n***Undead Fortitude.*** If damage reduces the zombie to 0 HP, it makes a Constitution saving throw (DC 5 + the damage taken) unless the damage is Radiant or from a Critical Hit. On a success, it drops to 1 HP instead.\n\n**Actions**\n***Slam.*** Melee Attack: +3 to hit, reach 5 ft. *Hit:* 4 (1d6+1) bludgeoning damage.",
+          "tags": ["undead", "cr-low"]
+        },
+        {
+          "name": "Ghoul",
+          "meta": "CR 1 · Medium Undead",
+          "hp": 22,
+          "ac": 12,
+          "statblock": "**Medium Undead, Chaotic Evil**\n\n**AC** 12 · **HP** 22 (5d8) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 13 (+1) | 15 (+2) | 10 (+0) | 7 (−2) | 10 (+0) | 6 (−2) |\n\n**Immunities** Poison; Exhaustion, Poisoned · **Senses** Darkvision 60 ft., Passive Perception 10 · **CR** 1 (200 XP) · **PB** +2\n\n**Actions**\n***Bite.*** Melee Attack: +2 to hit, reach 5 ft. *Hit:* 5 (2d4) piercing damage.\n***Claws.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 5 (1d6+2) slashing damage. If the target is a creature that isn't an Undead or elf, it makes a DC 10 Constitution save or has the Paralyzed condition for 1 minute (repeat save at end of each of its turns).",
+          "tags": ["undead", "cr-1"]
+        },
+        {
+          "name": "Dire Wolf",
+          "meta": "CR 1 · Large Beast",
+          "hp": 22,
+          "ac": 14,
+          "statblock": "**Large Beast, Unaligned**\n\n**AC** 14 (natural armor) · **HP** 22 (3d10+6) · **Speed** 50 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 17 (+3) | 15 (+2) | 15 (+2) | 3 (−4) | 12 (+1) | 7 (−2) |\n\n**Skills** Perception +5, Stealth +4 · **Senses** Darkvision 60 ft., Passive Perception 15 · **CR** 1 (200 XP) · **PB** +2\n\n***Pack Tactics.*** Advantage on an attack roll against a creature if at least one of the wolf's allies is within 5 feet of it and isn't Incapacitated.\n\n**Actions**\n***Bite.*** Melee Attack: +5 to hit, reach 5 ft. *Hit:* 8 (1d10+3) piercing damage. If the target is a Large or smaller creature, it makes a DC 13 Strength save or has the Prone condition.",
+          "tags": ["beast", "cr-1"]
+        },
+        {
+          "name": "Brown Bear",
+          "meta": "CR 1 · Large Beast",
+          "hp": 22,
+          "ac": 11,
+          "statblock": "**Large Beast, Unaligned**\n\n**AC** 11 (natural armor) · **HP** 22 (3d10+6) · **Speed** 40 ft., climb 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 19 (+4) | 10 (+0) | 16 (+3) | 2 (−4) | 13 (+1) | 7 (−2) |\n\n**Skills** Perception +3 · **Senses** Darkvision 60 ft., Passive Perception 13 · **CR** 1 (200 XP) · **PB** +2\n\n**Actions**\n***Multiattack.*** The bear makes one Bite attack and one Claws attack.\n***Bite.*** Melee Attack: +6 to hit, reach 5 ft. *Hit:* 9 (1d12+3) piercing damage.\n***Claws.*** Melee Attack: +6 to hit, reach 5 ft. *Hit:* 11 (2d6+4) slashing damage.",
+          "tags": ["beast", "cr-1"]
+        },
+        {
+          "name": "Giant Spider",
+          "meta": "CR 1 · Large Beast",
+          "hp": 26,
+          "ac": 14,
+          "statblock": "**Large Beast, Unaligned**\n\n**AC** 14 (natural armor) · **HP** 26 (4d10+4) · **Speed** 30 ft., climb 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 14 (+2) | 16 (+3) | 12 (+1) | 2 (−4) | 11 (+0) | 4 (−3) |\n\n**Skills** Stealth +7 · **Senses** Blindsight 10 ft., Darkvision 60 ft., Passive Perception 10 · **CR** 1 (200 XP) · **PB** +2\n\n***Spider Climb.*** The spider can climb difficult surfaces, including upside down on ceilings, without an ability check.\n***Web Walker.*** The spider ignores movement restrictions caused by webs.\n\n**Actions**\n***Bite.*** Melee Attack: +5 to hit, reach 5 ft. *Hit:* 7 (1d8+3) piercing damage plus 7 (2d6) poison damage, and the target makes a DC 11 Constitution save; on a failure it has the Poisoned condition for 1 minute.\n***Web (Recharge 5–6).*** Ranged: DC 13 Dexterity save (range 30/60 ft.); on a failure the target has the Restrained condition until the web is freed (DC 12 Strength check).",
+          "tags": ["beast", "cr-1"]
+        },
+        {
+          "name": "Hobgoblin",
+          "meta": "CR 1/2 · Medium Fey (goblinoid)",
+          "hp": 11,
+          "ac": 18,
+          "statblock": "**Medium Fey (goblinoid), Lawful Evil**\n\n**AC** 18 (chain mail, shield) · **HP** 11 (2d8+2) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 13 (+1) | 12 (+1) | 12 (+1) | 10 (+0) | 10 (+0) | 9 (−1) |\n\n**Senses** Darkvision 60 ft., Passive Perception 10 · **CR** 1/2 (100 XP) · **PB** +2\n\n***Pack Tactics.*** Advantage on an attack roll against a creature if at least one of the hobgoblin's allies is within 5 feet of it and isn't Incapacitated.\n\n**Actions**\n***Longsword.*** Melee Attack: +3 to hit, reach 5 ft. *Hit:* 12 (2d8+3) slashing damage (includes Martial Advantage when an ally is adjacent to the target).\n***Longbow.*** Ranged Attack: +3 to hit, range 150/600 ft. *Hit:* 5 (1d8+1) piercing damage.",
+          "tags": ["goblinoid", "fey", "humanoid", "cr-low"]
+        },
+        {
+          "name": "Gnoll",
+          "meta": "CR 1/2 · Medium Fiend",
+          "hp": 22,
+          "ac": 15,
+          "statblock": "**Medium Fiend, Chaotic Evil**\n\n**AC** 15 (hide armor, shield) · **HP** 22 (4d8+4) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 14 (+2) | 12 (+1) | 11 (+0) | 6 (−2) | 10 (+0) | 7 (−2) |\n\n**Senses** Darkvision 60 ft., Passive Perception 10 · **CR** 1/2 (100 XP) · **PB** +2\n\n***Rampage (Bonus Action).*** When the gnoll reduces a creature to 0 HP with a melee attack, it moves up to half its Speed and makes a Bite attack.\n\n**Actions**\n***Bite.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 4 (1d4+2) piercing damage.\n***Spear.*** Melee or Ranged Attack: +4 to hit, reach 5 ft. or range 20/60 ft. *Hit:* 5 (1d6+2) piercing damage.",
+          "tags": ["fiend", "cr-low"]
+        },
+        {
+          "name": "Ogre",
+          "meta": "CR 2 · Large Giant",
+          "hp": 59,
+          "ac": 11,
+          "statblock": "**Large Giant, Chaotic Evil**\n\n**AC** 11 (hide armor) · **HP** 59 (7d10+21) · **Speed** 40 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 19 (+4) | 8 (−1) | 16 (+3) | 5 (−3) | 7 (−2) | 7 (−2) |\n\n**Senses** Darkvision 60 ft., Passive Perception 8 · **CR** 2 (450 XP) · **PB** +2\n\n**Actions**\n***Greatclub.*** Melee Attack: +6 to hit, reach 5 ft. *Hit:* 13 (2d8+4) bludgeoning damage.\n***Javelin.*** Melee or Ranged Attack: +6 to hit, reach 5 ft. or range 30/120 ft. *Hit:* 11 (2d6+4) piercing damage.",
+          "tags": ["giant", "cr-2"]
+        },
+        {
+          "name": "Hill Giant",
+          "meta": "CR 5 · Huge Giant",
+          "hp": 105,
+          "ac": 13,
+          "statblock": "**Huge Giant, Chaotic Evil**\n\n**AC** 13 (natural armor) · **HP** 105 (10d12+40) · **Speed** 40 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 21 (+5) | 8 (−1) | 19 (+4) | 5 (−3) | 9 (−1) | 6 (−2) |\n\n**Skills** Perception +2 · **Senses** Passive Perception 12 · **CR** 5 (1,800 XP) · **PB** +3\n\n**Actions**\n***Multiattack.*** The giant makes two Greatclub attacks.\n***Greatclub.*** Melee Attack: +8 to hit, reach 10 ft. *Hit:* 18 (3d8+5) bludgeoning damage. If the target is a Huge or smaller creature, it makes a DC 16 Strength save or has the Prone condition.\n***Boulder.*** Ranged Attack: +8 to hit, range 60/240 ft. *Hit:* 21 (3d10+5) bludgeoning damage.",
+          "tags": ["giant", "cr-5"]
+        },
+        {
+          "name": "Owlbear",
+          "meta": "CR 3 · Large Monstrosity",
+          "hp": 59,
+          "ac": 13,
+          "statblock": "**Large Monstrosity, Unaligned**\n\n**AC** 13 (natural armor) · **HP** 59 (7d10+21) · **Speed** 40 ft., climb 40 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 20 (+5) | 12 (+1) | 17 (+3) | 3 (−4) | 12 (+1) | 7 (−2) |\n\n**Skills** Perception +5 · **Senses** Darkvision 60 ft., Passive Perception 15 · **CR** 3 (700 XP) · **PB** +2\n\n**Actions**\n***Multiattack.*** The owlbear makes two Rend attacks.\n***Rend.*** Melee Attack: +7 to hit, reach 5 ft. *Hit:* 14 (2d8+5) slashing damage.",
+          "tags": ["monstrosity", "cr-3"]
+        },
+        {
+          "name": "Wight",
+          "meta": "CR 3 · Medium Undead",
+          "hp": 82,
+          "ac": 14,
+          "statblock": "**Medium Undead, Neutral Evil**\n\n**AC** 14 (studded leather) · **HP** 82 (11d8+33) · **Speed** 30 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 15 (+2) | 14 (+2) | 16 (+3) | 10 (+0) | 13 (+1) | 15 (+2) |\n\n**Resistances** Necrotic · **Immunities** Poison; Exhaustion, Poisoned · **Senses** Darkvision 60 ft., Passive Perception 13 · **CR** 3 (700 XP) · **PB** +2\n\n***Sunlight Sensitivity.*** While in sunlight, the wight has Disadvantage on attack rolls and Perception checks that rely on sight.\n\n**Actions**\n***Multiattack.*** The wight makes two Necrotic Sword or Necrotic Bow attacks. It can replace one with a use of Life Drain.\n***Necrotic Sword.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 6 (1d8+2) slashing plus 4 (1d8) necrotic damage.\n***Life Drain.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 5 (1d6+2) necrotic damage, and the target's HP maximum is reduced by that amount until it finishes a Long Rest. A Humanoid slain by this rises as a Zombie at the start of the wight's next turn.",
+          "tags": ["undead", "cr-3"]
+        },
+        {
+          "name": "Wraith",
+          "meta": "CR 5 · Medium Undead",
+          "hp": 67,
+          "ac": 13,
+          "statblock": "**Medium Undead, Neutral Evil**\n\n**AC** 13 · **HP** 67 (9d8+27) · **Speed** 5 ft., fly 60 ft. (hover)\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 6 (−2) | 16 (+3) | 16 (+3) | 12 (+1) | 14 (+2) | 15 (+2) |\n\n**Resistances** Acid, Bludgeoning, Cold, Fire, Lightning, Piercing, Slashing, Thunder · **Immunities** Necrotic, Poison; Charmed, Exhaustion, Grappled, Paralyzed, Petrified, Poisoned, Prone, Restrained · **Senses** Darkvision 60 ft., Passive Perception 12 · **CR** 5 (1,800 XP) · **PB** +3\n\n***Incorporeal Movement.*** The wraith can move through creatures and objects as Difficult Terrain; it takes 5 (1d10) force damage if it ends its turn inside an object.\n***Sunlight Sensitivity.*** Disadvantage on attack rolls and sight-based Perception checks in sunlight.\n\n**Actions**\n***Life Drain.*** Melee Attack: +6 to hit, reach 5 ft. *Hit:* 21 (4d8+3) necrotic damage, and the target's HP maximum is reduced by an amount equal to the damage until it finishes a Long Rest.",
+          "tags": ["undead", "cr-5"]
+        },
+        {
+          "name": "Mummy",
+          "meta": "CR 3 · Medium Undead",
+          "hp": 58,
+          "ac": 11,
+          "statblock": "**Medium Undead, Lawful Evil**\n\n**AC** 11 · **HP** 58 (9d8+18) · **Speed** 20 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 16 (+3) | 8 (−1) | 15 (+2) | 6 (−2) | 12 (+1) | 12 (+1) |\n\n**Vulnerabilities** Fire · **Resistances** (from wrappings) · **Immunities** Necrotic, Poison; Charmed, Exhaustion, Frightened, Paralyzed, Poisoned · **Senses** Darkvision 60 ft., Passive Perception 11 · **CR** 3 (700 XP) · **PB** +2\n\n**Actions**\n***Multiattack.*** The mummy makes one Rotting Fist attack and uses Dreadful Glare.\n***Rotting Fist.*** Melee Attack: +5 to hit, reach 5 ft. *Hit:* 8 (2d4+3) bludgeoning plus 11 (2d10) necrotic damage. On a hit the target makes a DC 12 Constitution save or is cursed with Mummy Rot (can't regain HP, max HP drops by 11 (2d10) every 24 hours).\n***Dreadful Glare.*** DC 11 Wisdom save or the target has the Frightened condition until the end of the mummy's next turn.",
+          "tags": ["undead", "cr-3"]
+        },
+        {
+          "name": "Animated Armor",
+          "meta": "CR 1 · Medium Construct",
+          "hp": 33,
+          "ac": 18,
+          "statblock": "**Medium Construct, Unaligned**\n\n**AC** 18 (natural armor) · **HP** 33 (6d8+6) · **Speed** 25 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 14 (+2) | 11 (+0) | 13 (+1) | 1 (−5) | 3 (−4) | 1 (−5) |\n\n**Immunities** Poison, Psychic; Charmed, Deafened, Exhaustion, Frightened, Paralyzed, Petrified, Poisoned · **Senses** Blindsight 60 ft. (blind beyond), Passive Perception 6 · **CR** 1 (200 XP) · **PB** +2\n\n***Constructed Nature.*** The armor doesn't require air, food, drink, or sleep.\n\n**Actions**\n***Multiattack.*** The armor makes two Slam attacks.\n***Slam.*** Melee Attack: +4 to hit, reach 5 ft. *Hit:* 5 (1d6+2) bludgeoning damage.",
+          "tags": ["construct", "cr-1"]
+        },
+        {
+          "name": "Young White Dragon",
+          "meta": "CR 6 · Large Dragon",
+          "hp": 133,
+          "ac": 17,
+          "statblock": "**Large Dragon (chromatic), Chaotic Evil**\n\n**AC** 17 (natural armor) · **HP** 133 (14d10+56) · **Speed** 40 ft., burrow 20 ft., fly 80 ft., swim 40 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 18 (+4) | 10 (+0) | 18 (+4) | 6 (−2) | 11 (+0) | 12 (+1) |\n\n**Saving Throws** Dex +3, Wis +3 · **Skills** Perception +6, Stealth +3 · **Immunities** Cold · **Senses** Blindsight 30 ft., Darkvision 120 ft., Passive Perception 16 · **CR** 6 (2,300 XP) · **PB** +3\n\n**Actions**\n***Multiattack.*** The dragon makes two Rend attacks.\n***Rend.*** Melee Attack: +7 to hit, reach 10 ft. *Hit:* 13 (2d8+4) slashing plus 4 (1d8) cold damage.\n***Cold Breath (Recharge 5–6).*** 30-foot Cone, DC 15 Constitution save, 40 (9d8) cold damage (half on success).",
+          "tags": ["dragon", "chromatic", "cr-6"]
+        },
+        {
+          "name": "Young Green Dragon",
+          "meta": "CR 8 · Large Dragon",
+          "hp": 136,
+          "ac": 18,
+          "statblock": "**Large Dragon (chromatic), Lawful Evil**\n\n**AC** 18 (natural armor) · **HP** 136 (16d10+48) · **Speed** 40 ft., fly 80 ft., swim 40 ft.\n\n| STR | DEX | CON | INT | WIS | CHA |\n|---|---|---|---|---|---|\n| 19 (+4) | 12 (+1) | 17 (+3) | 16 (+3) | 13 (+1) | 15 (+2) |\n\n**Saving Throws** Dex +4, Wis +4 · **Skills** Deception +5, Perception +7, Stealth +4 · **Immunities** Poison; Poisoned · **Senses** Blindsight 30 ft., Darkvision 120 ft., Passive Perception 17 · **CR** 8 (3,900 XP) · **PB** +3\n\n**Actions**\n***Multiattack.*** The dragon makes one Bite and two Claws attacks.\n***Bite.*** Melee Attack: +7 to hit, reach 10 ft. *Hit:* 11 (2d6+4) piercing plus 7 (2d6) poison damage.\n***Claws.*** Melee Attack: +7 to hit, reach 5 ft. *Hit:* 15 (3d6+4) slashing damage.\n***Poison Breath (Recharge 5–6).*** 30-foot Cone, DC 14 Constitution save, 42 (12d6) poison damage (half on success).",
+          "tags": ["dragon", "chromatic", "cr-8"]
+        }
+      ],
+      "tables": [
+        {
+          "id": "wild-magic-surge",
+          "name": "Minor Wild Magic Surge (d8)",
+          "die": "d8",
+          "entries": [
+            "Your skin turns a vivid blue until the end of your next Long Rest.",
+            "Tiny harmless sparks leap from your fingertips when you speak.",
+            "A faint chime sounds each time you take damage for the next minute.",
+            "Flowers bloom in a 5-foot radius around you for 1 minute.",
+            "You can't speak above a whisper for the next minute; whispers carry oddly far.",
+            "Your eyes glow with soft light, shedding Dim Light in a 5-foot radius for 1 minute.",
+            "You exude the smell of fresh rain for the next hour.",
+            "A spectral echo repeats your last spoken word once, faintly."
+          ]
+        },
+        {
+          "id": "treasure-trinkets",
+          "name": "Curious Trinkets (d10)",
+          "die": "d10",
+          "entries": [
+            "A mummified goblin hand on a leather cord.",
+            "A crystal that faintly hums when held near magic.",
+            "A glass eye that always seems to be watching.",
+            "A small wooden box that rattles but won't open.",
+            "A silver coin from a kingdom no one remembers.",
+            "A vial of dragon's blood, long since dried.",
+            "A map to a treasure, drawn by a child.",
+            "A brass key with no lock to fit it.",
+            "A dried flower that never wilts.",
+            "A ring of keys, all of them bent."
+          ]
+        }
+      ],
+      "reference": [
+        {
+          "id": "d20-core",
+          "title": "Ability Checks, the D20 Test & DCs",
+          "category": "Core Rules",
+          "tags": ["d20", "check", "dc", "core"],
+          "body": "Whenever the outcome of an action is uncertain, you make a **D20 Test** — an ability check, an attack roll, or a saving throw. Roll **1d20**, add the relevant **ability modifier** (and your **Proficiency Bonus** if you're proficient), and compare the total to a target number.\n\nFor an ability check, that target is the **Difficulty Class (DC)** set by the GM:\n\n| DC | Difficulty |\n|---|---|\n| 5 | Very Easy |\n| 10 | Easy |\n| 15 | Medium |\n| 20 | Hard |\n| 25 | Very Hard |\n| 30 | Nearly Impossible |\n\nIf your total **meets or beats** the DC, you succeed. Don't call for a roll when failure is impossible or has no interesting consequence."
+        },
+        {
+          "id": "ability-modifiers",
+          "title": "Ability Scores & Modifiers",
+          "category": "Core Rules",
+          "tags": ["abilities", "modifier", "scores"],
+          "body": "The six abilities are **Strength, Dexterity, Constitution, Intelligence, Wisdom, and Charisma**, each with a score (typically 1–20 for characters; up to 30 with magic).\n\nThe **modifier** is what you actually add to rolls: **modifier = (score − 10) ÷ 2, rounded down.**\n\n| Score | Mod | Score | Mod |\n|---|---|---|---|\n| 1 | −5 | 14–15 | +2 |\n| 2–3 | −4 | 16–17 | +3 |\n| 4–5 | −3 | 18–19 | +4 |\n| 6–7 | −2 | 20–21 | +5 |\n| 8–9 | −1 | 22–23 | +6 |\n| 10–11 | +0 | 24–25 | +7 |\n| 12–13 | +1 | 30 | +10 |\n\n**At creation:** use the Standard Array (15, 14, 13, 12, 10, 8) or Point Buy (27 points), then apply a +2 and a +1 (or three +1s) from your background. The cap at creation is 20."
+        },
+        {
+          "id": "advantage",
+          "title": "Advantage & Disadvantage",
+          "category": "Core Rules",
+          "tags": ["advantage", "disadvantage"],
+          "body": "Sometimes circumstances grant **Advantage** or impose **Disadvantage** on a D20 Test.\n\n- **Advantage:** roll **2d20** and use the **higher** roll.\n- **Disadvantage:** roll **2d20** and use the **lower** roll.\n\nRules:\n- They never stack — you have Advantage or Disadvantage, never \"double.\"\n- If you have **both** Advantage and Disadvantage from any number of sources, they **cancel** and you roll a single d20.\n- Apply other modifiers normally to whichever d20 you keep.\n- A natural 20 or natural 1 on the kept die still triggers crits/auto-results as usual."
+        },
+        {
+          "id": "proficiency",
+          "title": "Proficiency Bonus",
+          "category": "Core Rules",
+          "tags": ["proficiency", "bonus", "level"],
+          "body": "Your **Proficiency Bonus** is added once to any roll you're proficient with — a skill, a saving throw, an attack with a weapon you're trained in, or a spell attack. It scales with your character level (not class level), and **never applies more than once to a single roll**.\n\n| Level | PB | Level | PB |\n|---|---|---|---|\n| 1–4 | +2 | 13–16 | +5 |\n| 5–8 | +3 | 17–20 | +6 |\n| 9–12 | +4 | | |\n\nFor monsters, PB is listed in the stat block and is derived from Challenge Rating."
+        },
+        {
+          "id": "saving-throws",
+          "title": "Saving Throws",
+          "category": "Core Rules",
+          "tags": ["save", "saving throw", "defense"],
+          "body": "A **saving throw** is a D20 Test you make to resist a threat — a spell, a trap, a poison, a dragon's breath. Roll **1d20 + the relevant ability modifier**, and add your **Proficiency Bonus** if you're proficient in that save (each class grants proficiency in two).\n\nThe DC is set by the effect. For a spell, **Spell Save DC = 8 + spellcasting ability modifier + Proficiency Bonus.**\n\nMany effects deal **half damage on a successful save** (\"save for half\"). Constitution saves are commonly used to maintain **Concentration** when you take damage (DC 10 or half the damage taken, whichever is higher)."
+        },
+        {
+          "id": "skills",
+          "title": "Skills",
+          "category": "Core Rules",
+          "tags": ["skills", "list", "checks"],
+          "body": "Each skill is tied to an ability. If you're **proficient** in a skill, add your Proficiency Bonus to checks made with it.\n\n| Ability | Skills |\n|---|---|\n| **Strength** | Athletics |\n| **Dexterity** | Acrobatics, Sleight of Hand, Stealth |\n| **Intelligence** | Arcana, History, Investigation, Nature, Religion |\n| **Wisdom** | Animal Handling, Insight, Medicine, Perception, Survival |\n| **Charisma** | Deception, Intimidation, Performance, Persuasion |\n\nConstitution has no associated skills. The GM may ask for a check using a different ability than usual when the situation calls for it (e.g., a Strength (Intimidation) check to physically menace someone)."
+        },
+        {
+          "id": "combat-round",
+          "title": "The Combat Round & Actions",
+          "category": "Combat",
+          "tags": ["combat", "round", "initiative", "action"],
+          "body": "Combat runs in **rounds** of about 6 seconds. At the start, everyone rolls **Initiative** (a Dexterity check); highest goes first, then proceeds in descending order.\n\nOn your turn you can **move** up to your Speed and take **one action**. You may also take **one Bonus Action** (if something grants you one) and your **Reaction** (one per round, usable on others' turns).\n\nCommon actions:\n\n- **Attack** — make one melee or ranged attack (some features grant extra attacks).\n- **Dash** — gain extra movement equal to your Speed.\n- **Disengage** — your movement doesn't provoke Opportunity Attacks this turn.\n- **Dodge** — attacks against you have Disadvantage; Dexterity saves have Advantage.\n- **Help** — give an ally Advantage on a check or an attack against a creature within 5 feet.\n- **Hide** — make a Dexterity (Stealth) check to become unseen.\n- **Ready** — prepare an action to trigger on a condition you specify (uses your Reaction).\n- **Search**, **Influence**, **Study**, **Utilize**, **Magic** (cast a spell) — round out the action options."
+        },
+        {
+          "id": "attack-rolls",
+          "title": "Attack Rolls & Damage",
+          "category": "Combat",
+          "tags": ["attack", "damage", "hit", "crit"],
+          "body": "To attack, roll **1d20 + ability modifier + Proficiency Bonus** (if proficient) and compare to the target's **Armor Class (AC)**. Melee usually uses **Strength**; ranged uses **Dexterity**; **Finesse** weapons let you choose.\n\n- If your total **meets or beats** the AC, you **hit**. Roll the weapon's damage dice and add the same ability modifier.\n- A **natural 20** is a **Critical Hit** — roll all the attack's damage dice **twice** and add modifiers once. It hits regardless of AC.\n- A **natural 1** always **misses**.\n\n**Damage types** (bludgeoning, piercing, slashing, fire, cold, etc.) interact with **Resistance** (half damage) and **Vulnerability** (double damage). When you drop to 0 HP, you fall **Unconscious** and begin making Death Saving Throws."
+        },
+        {
+          "id": "cover-opportunity",
+          "title": "Cover & Opportunity Attacks",
+          "category": "Combat",
+          "tags": ["cover", "opportunity", "movement"],
+          "body": "**Cover** improves AC and Dexterity saves against attacks from across it:\n\n| Cover | Bonus |\n|---|---|\n| Half cover | +2 AC & Dex saves |\n| Three-quarters cover | +5 AC & Dex saves |\n| Total cover | Can't be targeted directly |\n\n**Opportunity Attacks:** when a creature you can see leaves your reach using its movement, you can spend your **Reaction** to make one melee attack against it. Taking the **Disengage** action, teleporting, or being moved without using your own movement avoids provoking."
+        },
+        {
+          "id": "conditions",
+          "title": "Conditions Overview",
+          "category": "Combat",
+          "tags": ["conditions", "status"],
+          "body": "**Conditions** are temporary states that change how a creature functions. Key ones:\n\n- **Prone** — Disadvantage on attacks; nearby melee attackers have Advantage. Standing costs half your movement.\n- **Grappled / Restrained** — Speed 0; Restrained also gives Disadvantage on your attacks and Advantage to attackers.\n- **Frightened** — Disadvantage on checks/attacks while the source is in sight; can't move closer to it.\n- **Poisoned** — Disadvantage on attacks and ability checks.\n- **Incapacitated** — no actions, Bonus Actions, or Reactions.\n- **Paralyzed / Stunned / Unconscious** — escalating loss of control; auto-fail Str & Dex saves; attackers have Advantage (and crit on melee hits while Paralyzed/Unconscious).\n- **Exhaustion** — levels 1–6; each level is a cumulative −2 to D20 Tests and −5 ft. Speed. Level 6 is death.\n\nSee the full Conditions list for exact wording on all fifteen."
+        },
+        {
+          "id": "death-saves",
+          "title": "Dropping to 0 HP & Death Saves",
+          "category": "Combat",
+          "tags": ["death", "dying", "save", "stable"],
+          "body": "When you drop to **0 hit points** you fall **Unconscious** (unless killed outright by massive damage — taking damage ≥ your HP maximum at 0 HP).\n\nAt the start of each of your turns while at 0 HP, make a **Death Saving Throw**: roll a plain **d20** (no modifiers).\n\n- **10 or higher = success**, **9 or lower = failure**.\n- **Three successes** → you become **Stable** (still Unconscious, but no longer rolling).\n- **Three failures** → you **die**.\n- A **natural 20** restores you to **1 HP**. A **natural 1** counts as **two failures**.\n- Taking any damage while at 0 HP is **one failure** (a melee hit from within 5 feet is two; a crit kills outright if it deals two failures' worth).\n\nAny healing brings you back to consciousness at the restored HP. A **Stable** creature regains 1 HP after 1d4 hours."
+        },
+        {
+          "id": "resting",
+          "title": "Resting (Short & Long Rests)",
+          "category": "Adventuring",
+          "tags": ["rest", "short rest", "long rest", "recovery"],
+          "body": "Adventurers recover by resting.\n\n- **Short Rest** — at least **1 hour** of light activity. You may spend **Hit Dice** to regain HP: roll the die, add your Constitution modifier, and heal that much (one die at a time, as many as you have). Some class features recharge on a Short Rest.\n- **Long Rest** — at least **8 hours** (up to 2 of which can be light activity, the rest sleeping or resting). You regain **all lost HP**, recover **half your total Hit Dice** (minimum 1), and reset features that recharge on a Long Rest. You also remove one level of **Exhaustion**.\n\nYou can benefit from only **one Long Rest per 24 hours**, and you must have at least 1 HP to start one. Interruptions of strenuous activity (an hour of walking, fighting, casting) reset the rest's timer."
+        },
+        {
+          "id": "spellcasting",
+          "title": "Spellcasting Basics",
+          "category": "Magic",
+          "tags": ["spells", "slots", "cantrips", "concentration"],
+          "body": "Spellcasters prepare or know spells and expend **spell slots** to cast them.\n\n- **Spell slots** are leveled (1st–9th). Casting a spell uses a slot of the spell's level or higher; **casting at a higher level** can strengthen the effect. Slots refresh on a Long Rest.\n- **Cantrips** (level 0) are always available and cost no slot.\n- **Spell attack bonus** = ability modifier + Proficiency Bonus. **Spell Save DC** = 8 + ability modifier + Proficiency Bonus. The ability used depends on class (INT for wizards, WIS for clerics/druids, CHA for bards/sorcerers/warlocks/paladins).\n- **Components:** Verbal (V), Somatic (S), Material (M). **Casting time** is usually one action, sometimes a Bonus Action, Reaction, or minutes/hours (ritual).\n- **Concentration:** some spells require it. You can concentrate on only one such spell at a time; taking damage forces a Constitution save (DC 10 or half the damage, whichever is higher) to maintain it."
+        },
+        {
+          "id": "leveling-xp",
+          "title": "Experience & Leveling Up",
+          "category": "Adventuring",
+          "tags": ["xp", "level", "advancement"],
+          "body": "Characters advance by gaining **Experience Points (XP)**, awarded for overcoming monsters and challenges. When your total reaches the next threshold, you gain a **level**.\n\n| Level | XP | Level | XP |\n|---|---|---|---|\n| 1 | 0 | 6 | 14,000 |\n| 2 | 300 | 7 | 23,000 |\n| 3 | 900 | 8 | 34,000 |\n| 4 | 2,700 | 9 | 48,000 |\n| 5 | 6,500 | 10 | 64,000 |\n\nEach level grants more hit points (roll your class Hit Die + Con modifier, or take the fixed average) and new class features. At levels **4, 8, 12, 16, and 19** most classes gain an **Ability Score Improvement** (+2 to one ability or +1 to two, cap 20) or a **Feat** instead. Many tables instead use **Milestone** advancement — leveling at story beats rather than counting XP."
+        }
+      ],
+      "rollPresets": [
+        { "name": "Strength check", "attr": "str_mod", "ease": "Medium", "note": "Athletics, lifting, breaking, shoving." },
+        { "name": "Dexterity check", "attr": "dex_mod", "ease": "Medium", "note": "Acrobatics, Sleight of Hand, balance." },
+        { "name": "Constitution check", "attr": "con_mod", "ease": "Medium", "note": "Endurance, holding breath." },
+        { "name": "Intelligence check", "attr": "int_mod", "ease": "Medium", "note": "Arcana, History, Investigation, recall lore." },
+        { "name": "Wisdom check", "attr": "wis_mod", "ease": "Medium", "note": "Insight, Medicine, Survival." },
+        { "name": "Charisma check", "attr": "cha_mod", "ease": "Medium", "note": "Persuasion, Deception, Intimidation, Performance." },
+        { "name": "Strength save", "attr": "str_mod", "ease": "Medium", "note": "Resist being grappled, restrained, pushed." },
+        { "name": "Dexterity save", "attr": "dex_mod", "ease": "Medium", "note": "Dodge area effects; \"save for half.\"" },
+        { "name": "Constitution save", "attr": "con_mod", "ease": "Medium", "note": "Poison, exhaustion, maintaining Concentration." },
+        { "name": "Wisdom save", "attr": "wis_mod", "ease": "Medium", "note": "Resist charm, fear, many mind effects." },
+        { "name": "Attack roll", "attr": "str_mod", "ease": "Medium", "note": "1d20 + mod + PB vs target AC; nat 20 crits." },
+        { "name": "Initiative", "attr": "dex_mod", "note": "Roll at the start of combat to set turn order." },
+        { "name": "Perception", "attr": "wis_mod", "ease": "Medium", "note": "Notice hidden creatures, traps, details." },
+        { "name": "Stealth", "attr": "dex_mod", "ease": "Medium", "note": "Move unseen and unheard." },
+        { "name": "Persuasion", "attr": "cha_mod", "ease": "Medium", "note": "Influence with tact and good faith." },
+        { "name": "Investigation", "attr": "int_mod", "ease": "Medium", "note": "Deduce, search for clues, analyze." }
+      ],
+      "rewardStat": { "key": "xp", "name": "Experience", "perSession": "~level-based" },
+      "npcStatFormat": "STR / DEX / CON / INT / WIS / CHA | AC | HP",
+      "_seed": true
+    }
+  ]
+}

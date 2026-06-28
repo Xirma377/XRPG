@@ -1,0 +1,8 @@
+{
+  "collection": "players",
+  "docs": [
+    { "id": "plr_sam", "name": "Sam", "color": "#5bd0a0", "email": "", "notes": "GM's longtime player. Likes to negotiate." },
+    { "id": "plr_jordan", "name": "Jordan", "color": "#6fa8ff", "email": "", "notes": "Tactical thinker. Always counting the fuel." },
+    { "id": "plr_alex", "name": "Alex", "color": "#ff6b9d", "email": "", "notes": "Roleplay-forward. Will adopt every NPC." }
+  ]
+}

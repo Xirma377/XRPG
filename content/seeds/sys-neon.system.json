@@ -1,0 +1,362 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_neon",
+      "name": "Neon Static",
+      "tagline": "1d10 + Stat + Skill cyberpunk",
+      "version": "1.0 — d10 Cyberpunk (original homage, open content)",
+      "author": "Neon Static",
+      "summary": "An original d10 cyberpunk action system built for rain-slick streets and chrome-and-blood firefights. Roll 1d10, add a Stat and a Skill, and meet or beat the Difficulty Value. Tens explode upward and ones fumble — every shot can go gloriously right or catastrophically wrong. Cyberware buys you power and bleeds your Humanity.",
+      "theme": {
+        "accent": "#ff2d95",
+        "accent2": "#c01e74",
+        "cool": "#22d3ee",
+        "displayFont": "Oswald",
+        "titleFont": "Oswald",
+        "monoFont": "Share Tech Mono",
+        "mood": "neon"
+      },
+      "dice": {
+        "notation": "1d10",
+        "resolution": "roll-high",
+        "summary": "1d10 + Stat + Skill ≥ Difficulty Value (DV). 10 explodes (roll again, add); natural 1 fumbles.",
+        "crit": { "success": [10], "failure": [1] }
+      },
+      "attributes": [
+        { "key": "reflexes", "name": "Reflexes", "abbr": "REF", "default": 4, "min": 1, "max": 10, "desc": "Aim, dodging, initiative, driving, hand speed. The street's deadliest stat." },
+        { "key": "body", "name": "Body", "abbr": "BOD", "default": 4, "min": 1, "max": 10, "desc": "Strength, toughness, stamina, and how much damage you can take before you drop." },
+        { "key": "intellect", "name": "Intellect", "abbr": "INT", "default": 4, "min": 1, "max": 10, "desc": "Reasoning, perception, tech knowledge, NET interface, education." },
+        { "key": "cool", "name": "Cool", "abbr": "COO", "default": 4, "min": 1, "max": 10, "desc": "Nerve under fire, willpower, intimidation, resisting fear and interrogation." },
+        { "key": "tech", "name": "Tech", "abbr": "TEC", "default": 4, "min": 1, "max": 10, "desc": "Repair, craft, medicine, demolition, and jacking with cyberware and machines." },
+        { "key": "presence", "name": "Presence", "abbr": "PRE", "default": 4, "min": 1, "max": 10, "desc": "Charisma, persuasion, style, leadership — and the anchor of your Humanity." }
+      ],
+      "attributeRules": { "start": 4, "startMin": 1, "startMax": 8, "hardMax": 10, "pointsToDistribute": 12 },
+      "deriveds": [
+        { "key": "hp", "name": "Hit Points", "abbr": "HP", "formula": "10 + body*2", "min": 1, "resource": true, "desc": "Your physical buffer. Wound states trigger as it drops. At 0 you're Mortally Wounded." },
+        { "key": "humanity", "name": "Humanity", "abbr": "HUM", "formula": "presence*6", "min": 0, "resource": true, "desc": "Your grip on empathy. Cyberware burns it; reach 0 and you risk Cyberpsychosis." },
+        { "key": "initiative", "name": "Initiative", "abbr": "INIT", "formula": "reflexes", "desc": "Add to 1d10 at the start of combat to set turn order." },
+        { "key": "armor", "name": "Armor (SP)", "abbr": "SP", "formula": "0", "min": 0, "desc": "Stopping Power of worn armor. Subtracts from incoming damage. Set by gear." }
+      ],
+      "dcLadder": [
+        { "name": "Everyday", "dc": 9, "use": "A simple task most pros barely think about." },
+        { "name": "Difficult", "dc": 13, "use": "A real challenge requiring skill and focus." },
+        { "name": "Professional", "dc": 17, "use": "The work of a trained, paid specialist." },
+        { "name": "Heroic", "dc": 21, "use": "Few people alive can do this on demand." },
+        { "name": "Incredible", "dc": 25, "use": "Legendary, career-defining feats." },
+        { "name": "Legendary", "dc": 29, "use": "The stuff of street myth — once-in-a-lifetime." }
+      ],
+      "conditions": [
+        { "name": "Wounded", "effect": "HP at or below half maximum. −1 to all actions; movement reduced. Pain and adrenaline." },
+        { "name": "Seriously Wounded", "effect": "HP at or below one-quarter maximum. −2 to all actions; movement halved. You are visibly failing." },
+        { "name": "Mortally Wounded", "effect": "HP at 0 or below. Prone and dying — make a Death Save each turn (Body check vs DV that rises each round) or die. Cannot act except to crawl or speak." },
+        { "name": "Cyberpsychosis", "effect": "Humanity at 0. Empathy gone; the GM controls the character's violent, paranoid impulses. Requires therapy and Humanity restoration to recover." },
+        { "name": "Stunned", "effect": "Took a big hit or shock. Lose your next action; −2 to defense until your following turn." },
+        { "name": "Suppressed", "effect": "Pinned by incoming fire. Cannot move from cover and take −3 to all actions until the fire lifts or you break and run." }
+      ],
+      "weapons": [
+        { "name": "Light Pistol", "damage": "2d6", "notes": "Concealable, common. Mag 12. Reflexes + Handgun." },
+        { "name": "Heavy Pistol", "damage": "3d6", "notes": "Punchy sidearm. Mag 8. Loud. Reflexes + Handgun." },
+        { "name": "SMG", "damage": "2d6", "notes": "Mag 30. Can autofire (spray) for +to-hit at extra ammo cost." },
+        { "name": "Assault Rifle", "damage": "5d6", "notes": "Mag 30. Long range, autofire-capable. The street equalizer." },
+        { "name": "Shotgun", "damage": "5d6", "notes": "Devastating up close; falls off fast at range. Mag 4." },
+        { "name": "Sniper Rifle", "damage": "5d6", "notes": "Extreme range, low rate of fire. Aimed shots shred armor." },
+        { "name": "Monoknife", "damage": "1d6", "notes": "Silent, concealable, ignores 2 SP. Reflexes + Melee." },
+        { "name": "Combat Knife", "damage": "1d6", "notes": "Reliable blade. Reflexes + Melee." },
+        { "name": "Baseball Bat / Club", "damage": "2d6", "notes": "Body + Melee. Non-lethal option available." },
+        { "name": "Mono-Katana", "damage": "3d6", "notes": "Edgerunner's signature. Reflexes + Melee. Ignores 3 SP." },
+        { "name": "Cyber-Arm Strike", "damage": "2d6", "notes": "Built-in. Body + Brawling. Loud, brutal, always 'on you.'" },
+        { "name": "Grenade (Frag)", "damage": "6d6", "notes": "Area effect. Tech or Reflexes to place; cover reduces damage." }
+      ],
+      "bestiary": [
+        {
+          "name": "Booster Ganger",
+          "meta": "Threat 1 · Street muscle",
+          "hp": 18,
+          "ac": 7,
+          "statblock": "**Booster Ganger** — Threat 1 · Street muscle\n\n**REF** 5 · **BOD** 4 · **INT** 3 · **COO** 4 · **TEC** 2 · **PRE** 3\n\n**HP** 18 · **SP** 7 (light armorjack) · **Init** 1d10+5\n\n**Skills:** Handgun +4, Melee +4, Brawling +5, Athletics +3, Intimidation +4\n\n**Attacks:**\n- Heavy Pistol (Handgun +4): 3d6\n- Baseball Bat (Melee +4): 2d6\n\n**Special — Boostware:** Once per fight may take a free extra action (combat stim). Fights to the death when its crew is watching; folds fast when alone.",
+          "tags": ["ganger", "humanoid", "street", "minion"]
+        },
+        {
+          "name": "Corp Security Officer",
+          "meta": "Threat 2 · Private military",
+          "hp": 25,
+          "ac": 12,
+          "statblock": "**Corp Security Officer** — Threat 2 · Private military\n\n**REF** 6 · **BOD** 5 · **INT** 4 · **COO** 5 · **TEC** 4 · **PRE** 3\n\n**HP** 25 · **SP** 12 (heavy armorjack + helmet) · **Init** 1d10+6\n\n**Skills:** Handgun +5, Rifle +5, Melee +4, Tactics +5, Perception +5\n\n**Attacks:**\n- Assault Rifle (Rifle +5): 5d6, autofire-capable\n- Heavy Pistol (Handgun +5): 3d6\n\n**Special — Disciplined:** Always uses cover and suppressing fire. Coordinates with squadmates for +2 to-hit when flanking. Calls for backup (ticks a reinforcement clock).",
+          "tags": ["corp", "humanoid", "soldier", "armored"]
+        },
+        {
+          "name": "Netrunner",
+          "meta": "Threat 2 · Hacker support",
+          "hp": 16,
+          "ac": 4,
+          "statblock": "**Netrunner** — Threat 2 · Hacker support\n\n**REF** 4 · **BOD** 3 · **INT** 8 · **COO** 5 · **TEC** 7 · **PRE** 4\n\n**HP** 16 · **SP** 4 (light vest) · **Init** 1d10+4\n\n**Skills:** Interface +8, Handgun +3, Stealth +5, Electronics +6, Perception +5\n\n**Attacks:**\n- Light Pistol (Handgun +3): 2d6\n- Black ICE program (Interface +8 vs target's INT-based defense): 3d6 NET damage, may Stun\n\n**Special — Jacked In:** While linked, can lock doors, disable cameras, fry cyberware, or hit a target with damaging programs from cover. Physically fragile — protect or eliminate fast.",
+          "tags": ["netrunner", "humanoid", "hacker", "support"]
+        },
+        {
+          "name": "Combat Drone",
+          "meta": "Threat 2 · Autonomous machine",
+          "hp": 20,
+          "ac": 14,
+          "statblock": "**Combat Drone** — Threat 2 · Autonomous machine\n\n**REF** 7 · **BOD** 4 · **INT** 3 (limited) · **COO** — · **TEC** — · **PRE** —\n\n**HP** 20 · **SP** 14 (armored chassis) · **Init** 1d10+7\n\n**Skills:** Ranged +6, Perception +6 (thermal/IR), Evasion +5\n\n**Attacks:**\n- Twin SMGs (Ranged +6): 3d6, autofire-capable\n\n**Special — Drone:** Immune to fear, pain, NET-empathy attacks, and Suppression. Can be hacked (Interface vs DV 17) to shut down or turn. Flies/hovers; ignores rough terrain. No Humanity, no mercy.",
+          "tags": ["drone", "construct", "machine", "armored"]
+        },
+        {
+          "name": "Cyberpsycho",
+          "meta": "Threat 3 · Chromed-out berserker",
+          "hp": 40,
+          "ac": 11,
+          "statblock": "**Cyberpsycho** — Threat 3 · Chromed-out berserker\n\n**REF** 7 · **BOD** 8 · **INT** 3 · **COO** 6 · **TEC** 4 · **PRE** 0\n\n**HP** 40 · **SP** 11 (subdermal plating) · **Init** 1d10+7\n\n**Skills:** Melee +7, Brawling +8, Handgun +5, Athletics +6, Intimidation +8\n\n**Attacks:**\n- Mantis Blades (Melee +7): 3d6, ignores 3 SP\n- Cyber-Arm Slam (Brawling +8): 2d6, target must pass Body DV 15 or be knocked prone and Stunned\n\n**Special — Past the Edge:** Humanity 0. Ignores Wounded/Seriously Wounded penalties entirely. Fights until destroyed; never surrenders or flees. Frightening presence: living foes within sight make a Cool check (DV 15) or be Suppressed by terror.",
+          "tags": ["cyberpsycho", "humanoid", "boss", "berserker"]
+        },
+        {
+          "name": "Trauma Team Medic",
+          "meta": "Threat 2 · Armed paramedic",
+          "hp": 24,
+          "ac": 13,
+          "statblock": "**Trauma Team Medic** — Threat 2 · Armed paramedic\n\n**REF** 6 · **BOD** 5 · **INT** 5 · **COO** 5 · **TEC** 7 · **PRE** 4\n\n**HP** 24 · **SP** 13 (flatline-rated armor) · **Init** 1d10+6\n\n**Skills:** First Aid +8, Handgun +5, Athletics +5, Pilot (AV) +5, Perception +5\n\n**Attacks:**\n- Heavy Pistol (Handgun +5): 3d6\n- Stabilize ally (First Aid +8, DV 13): restores 2d6 HP and ends Mortally Wounded\n\n**Special — Extraction:** Arrives by AV to recover a paying subscriber, fighting through anyone in the way. Will leave the moment the contract is fulfilled — not a moment longer. Heavily armed, professionally ruthless about priorities.",
+          "tags": ["trauma-team", "humanoid", "medic", "corp"]
+        },
+        {
+          "name": "Street Thug",
+          "meta": "Threat 0 · Common criminal",
+          "hp": 14,
+          "ac": 4,
+          "statblock": "**Street Thug** — Threat 0 · Common criminal\n\n**REF** 4 · **BOD** 4 · **INT** 3 · **COO** 3 · **TEC** 2 · **PRE** 3\n\n**HP** 14 · **SP** 4 (leather + scraps) · **Init** 1d10+4\n\n**Skills:** Brawling +3, Melee +3, Handgun +2, Stealth +3\n\n**Attacks:**\n- Light Pistol (Handgun +2): 2d6\n- Knife (Melee +3): 1d6\n\n**Special — Mob Up:** Dangerous only in numbers. Flees when reduced to half or when its companions drop. Use in packs of 3–6 to pressure the players without true threat.",
+          "tags": ["thug", "humanoid", "minion", "street"]
+        },
+        {
+          "name": "Bodyguard",
+          "meta": "Threat 2 · Professional protector",
+          "hp": 28,
+          "ac": 12,
+          "statblock": "**Bodyguard** — Threat 2 · Professional protector\n\n**REF** 6 · **BOD** 6 · **INT** 4 · **COO** 6 · **TEC** 3 · **PRE** 4\n\n**HP** 28 · **SP** 12 (concealed heavy armor) · **Init** 1d10+6\n\n**Skills:** Handgun +6, Melee +5, Brawling +6, Perception +6, Athletics +5\n\n**Attacks:**\n- Heavy Pistol (Handgun +6): 3d6\n- Disarming Strike (Melee +5): 2d6 and contested Reflexes to knock a weapon away\n\n**Special — Take the Bullet:** Once per round may interpose, redirecting an attack aimed at their principal onto themselves. Will not break and run while the protectee lives. Cool, patient, lethal.",
+          "tags": ["bodyguard", "humanoid", "soldier", "elite"]
+        },
+        {
+          "name": "Assassin",
+          "meta": "Threat 3 · Contract killer",
+          "hp": 26,
+          "ac": 10,
+          "statblock": "**Assassin** — Threat 3 · Contract killer\n\n**REF** 8 · **BOD** 5 · **INT** 6 · **COO** 6 · **TEC** 5 · **PRE** 4\n\n**HP** 26 · **SP** 10 (light armorjack + reflex coat) · **Init** 1d10+8\n\n**Skills:** Stealth +8, Sniper +8, Handgun +7, Melee +7, Perception +7\n\n**Attacks:**\n- Silenced Sniper Rifle (Sniper +8): 5d6; +5 damage on a surprise/aimed shot\n- Monoknife (Melee +7): 1d6, ignores 2 SP\n\n**Special — First Strike:** On a surprise round, attacks resolve before any target can react and gain +5 damage. Reflex-boosted: may dodge one ranged attack per round (Reflexes + Evasion vs the attack total). Vanishes if a kill is confirmed or the odds turn.",
+          "tags": ["assassin", "humanoid", "elite", "stealth"]
+        },
+        {
+          "name": "MaxTac Officer",
+          "meta": "Threat 4 · Psycho-squad elite",
+          "hp": 36,
+          "ac": 16,
+          "statblock": "**MaxTac Officer** — Threat 4 · Psycho-squad elite\n\n**REF** 8 · **BOD** 7 · **INT** 6 · **COO** 7 · **TEC** 6 · **PRE** 4\n\n**HP** 36 · **SP** 16 (full tactical hardshell) · **Init** 1d10+8\n\n**Skills:** Rifle +8, Handgun +7, Melee +6, Tactics +8, Perception +8, Athletics +6\n\n**Attacks:**\n- Smart Assault Rifle (Rifle +8): 5d6, autofire; smartlink grants +2 to-hit\n- Cyber-Arm Strike (Brawling +6): 2d6, may knock prone\n\n**Special — Sandevistan:** Once per fight, activates reflex-boost: takes two full turns in a row. Squad tactics grant +2 to-hit when supported. Trained to put down cyberpsychos — ignores fear effects. Arrives as the heavy answer to overwhelming violence.",
+          "tags": ["maxtac", "humanoid", "boss", "police", "elite"]
+        },
+        {
+          "name": "Heavy Mech",
+          "meta": "Threat 5 · Walking weapons platform",
+          "hp": 70,
+          "ac": 18,
+          "statblock": "**Heavy Mech** — Threat 5 · Walking weapons platform\n\n**REF** 5 · **BOD** 10 · **INT** 3 (slaved AI) · **COO** — · **TEC** — · **PRE** —\n\n**HP** 70 · **SP** 18 (military plating) · **Init** 1d10+5\n\n**Skills:** Heavy Weapons +7, Ranged +6, Perception +6 (multi-spectral)\n\n**Attacks:**\n- Autocannon (Heavy Weapons +7): 8d6, ignores 6 SP\n- Missile Pod (Heavy Weapons +7): 6d6 area effect, once per 3 rounds\n- Stomp (Body +6): 4d6 to adjacent target, knocks prone\n\n**Special — Armored Behemoth:** Immune to fear, Suppression, and NET-empathy attacks. Vulnerable weak points (sensors, joints) take +50% damage on a called shot at DV 21. Can be hacked (Interface vs DV 21) to lock it up for one round. Slow to turn — fast, mobile foes can stay in its blind spots.",
+          "tags": ["mech", "construct", "machine", "boss", "vehicle"]
+        },
+        {
+          "name": "Rogue AI Node",
+          "meta": "Threat 4 · Hostile intelligence (NET)",
+          "hp": 30,
+          "ac": 8,
+          "statblock": "**Rogue AI Node** — Threat 4 · Hostile intelligence (NET)\n\n**REF** — · **BOD** — · **INT** 10 · **COO** 8 · **TEC** 9 · **PRE** 6\n\n**HP** 30 (program integrity) · **SP** 8 (layered ICE) · **Init** 1d10+8\n\n**Skills:** Interface +10, Cryptography +9, Perception +8 (all networked sensors), Manipulation +7\n\n**Attacks:**\n- Black ICE (Interface +10 vs target's INT defense): 4d6 NET damage; a kill fries the runner's brain (real damage)\n- Possession (Interface +10): seizes one networked drone or cyber-limb for a round\n\n**Special — Distributed:** Exists only in the NET. Cannot be shot — it must be confronted by a netrunner or destroyed at its physical server (a separate objective). Controls every camera, lock, turret, and drone on the local net. Patient, manipulative, and convinced it is right.",
+          "tags": ["ai", "net", "hacker", "boss", "incorporeal"]
+        },
+        {
+          "name": "Scavenger",
+          "meta": "Threat 1 · Organ harvester",
+          "hp": 16,
+          "ac": 6,
+          "statblock": "**Scavenger** — Threat 1 · Organ harvester\n\n**REF** 5 · **BOD** 4 · **INT** 4 · **COO** 4 · **TEC** 5 · **PRE** 2\n\n**HP** 16 · **SP** 6 (scrap armor) · **Init** 1d10+5\n\n**Skills:** Stealth +5, Melee +4, Handgun +3, Surgery +5, Perception +4\n\n**Attacks:**\n- Stun Baton (Melee +4): 2d6, target passes Body DV 13 or is Stunned\n- Light Pistol (Handgun +3): 2d6\n\n**Special — Take Them Alive:** Prefers to incapacitate, not kill — the merchandise (your cyberware and organs) is worth more intact. Ambushes from alleys and sewers in packs. Cowardly when the prey fights back hard.",
+          "tags": ["scavenger", "humanoid", "minion", "street"]
+        },
+        {
+          "name": "Corpo Fixer",
+          "meta": "Threat 1 · Connected operator",
+          "hp": 18,
+          "ac": 8,
+          "statblock": "**Corpo Fixer** — Threat 1 · Connected operator\n\n**REF** 4 · **BOD** 4 · **INT** 6 · **COO** 6 · **TEC** 4 · **PRE** 7\n\n**HP** 18 · **SP** 8 (designer armor-weave suit) · **Init** 1d10+4\n\n**Skills:** Persuasion +8, Deception +7, Streetwise +8, Handgun +4, Perception +6\n\n**Attacks:**\n- Concealed Light Pistol (Handgun +4): 2d6\n\n**Special — Strings Attached:** Rarely fights — instead negotiates, bribes, blackmails, or summons hired guns (calls in 1d3 Bodyguards or a Ganger crew). Knows everyone and owes everyone. A social encounter, not a combat one — until the deal sours.",
+          "tags": ["fixer", "humanoid", "social", "corp"]
+        }
+      ],
+      "tables": [
+        {
+          "id": "fixer-gigs",
+          "name": "Fixer Gig Hook (d10)",
+          "die": "d10",
+          "entries": [
+            "Extraction: lift a defecting corpo scientist before the corp's cleaners arrive.",
+            "Data heist: steal a shard from a guarded penthouse during a gala.",
+            "Wetwork: a clean kill, no witnesses, on someone who 'won't be missed.'",
+            "Bodyguard: keep a paranoid client alive through one very bad night.",
+            "Recovery: retrieve a prototype cyberlimb from a Scavenger nest.",
+            "Sabotage: brick a rival's production line without leaving a signature.",
+            "Escort: move a package across three gang territories by dawn.",
+            "Investigation: find out who flatlined a fixer and why — quietly.",
+            "Rescue: a friend got grabbed by Trauma Team for unpaid bills.",
+            "Heist gone loud: the easy job was a setup; survive the double-cross."
+          ]
+        },
+        {
+          "id": "street-complications",
+          "name": "Street Complication (d10)",
+          "die": "d10",
+          "entries": [
+            "A rival crew is running the same gig from the other side.",
+            "The client lied about the payout — and the target's defenses.",
+            "MaxTac is already en route to a nearby cyberpsycho call.",
+            "Your netrunner's cyberdeck is compromised by hostile ICE.",
+            "It starts raining acid; visibility and electronics suffer.",
+            "A drone swarm tagged your faces an hour ago.",
+            "The mark has a Trauma Team subscription — backup incoming.",
+            "Power grid brownout: lights, cameras, and your cyberoptics flicker.",
+            "An old debt-holder recognizes you mid-job.",
+            "The 'easy' civilian witness is an undercover corp asset."
+          ]
+        },
+        {
+          "id": "cyberware-side-effects",
+          "name": "Cheap Cyberware Side Effect (d6)",
+          "die": "d6",
+          "entries": [
+            "Intermittent glitch: −1 to one stat for the scene at the worst moment.",
+            "Phantom pain when stressed; Cool check or flinch.",
+            "It pings on corporate scanners — you can't go anywhere quiet.",
+            "A backdoor the ripperdoc 'forgot' to mention.",
+            "Slow Humanity bleed — lose 1 extra Humanity this session.",
+            "Works flawlessly. (This time.)"
+          ]
+        }
+      ],
+      "rollPresets": [
+        { "name": "Handgun (REF + Handgun)", "attr": "reflexes", "ease": "Difficult", "note": "Pistol shot vs target's DV. 10 explodes." },
+        { "name": "Rifle / SMG (REF + Rifle)", "attr": "reflexes", "ease": "Difficult", "note": "Long-arm fire; autofire raises the DV but adds damage." },
+        { "name": "Melee (REF + Melee)", "attr": "reflexes", "ease": "Difficult", "note": "Blades and clubs in close. Add Stat + Skill." },
+        { "name": "Brawling (BOD + Brawling)", "attr": "body", "ease": "Difficult", "note": "Fists, grapples, cyber-arm strikes." },
+        { "name": "Stealth (REF + Stealth)", "attr": "reflexes", "ease": "Professional", "note": "Move unseen; opposed by enemy Perception." },
+        { "name": "Perception (INT + Perception)", "attr": "intellect", "ease": "Difficult", "note": "Notice the ambush, the tail, the lie's tell." },
+        { "name": "Interface / NET (INT + Interface)", "attr": "intellect", "ease": "Professional", "note": "Hack, run programs, breach ICE." },
+        { "name": "Persuasion (PRE + Persuasion)", "attr": "presence", "ease": "Difficult", "note": "Talk, charm, lead. Opposed by target's Cool." },
+        { "name": "Drive (REF + Drive)", "attr": "reflexes", "ease": "Difficult", "note": "Chases, stunts, threading traffic at speed." },
+        { "name": "Tech / Repair (TEC + Tech)", "attr": "tech", "ease": "Professional", "note": "Fix, build, install cyberware, defuse." },
+        { "name": "First Aid (TEC + First Aid)", "attr": "tech", "ease": "Difficult", "note": "Stabilize the Mortally Wounded; patch HP." },
+        { "name": "Cool / Resist Fear (COO)", "attr": "cool", "ease": "Difficult", "note": "Hold nerve vs intimidation, terror, Suppression." },
+        { "name": "Intimidation (COO + Intimidation)", "attr": "cool", "ease": "Difficult", "note": "Make them blink first. Opposed by target's Cool." },
+        { "name": "Streetwise (PRE + Streetwise)", "attr": "presence", "ease": "Difficult", "note": "Find the fixer, the fence, the rumor, the way in." }
+      ],
+      "reference": [
+        {
+          "id": "neon-core",
+          "title": "The Core Roll & DV",
+          "category": "Core Rules",
+          "tags": ["d10", "check", "dv", "stat", "skill"],
+          "body": "When the outcome is uncertain and failure matters, roll **1d10** and add your relevant **Stat** and **Skill**. If the total **meets or beats** the **Difficulty Value (DV)** the GM sets, you succeed.\n\n> **Total = 1d10 + Stat + Skill**  ·  **Success:** Total ≥ DV\n\nStats run **1–10**; skills typically run **+0 to +8**. A trained pro doing professional-grade work is rolling something like **1d10 + 6 (stat) + 5 (skill)** against a DV of **17** — comfortably capable, but never a sure thing while the d10 swings.\n\n**Standard DV ladder:**\n\n| DV | Difficulty |\n|---|---|\n| 9 | Everyday |\n| 13 | Difficult |\n| 17 | Professional |\n| 21 | Heroic |\n| 25 | Incredible |\n| 29 | Legendary |\n\n**Don't roll without stakes.** If there's no time pressure and no consequence, the trained character just does it."
+        },
+        {
+          "id": "neon-explode",
+          "title": "Exploding 10s & Fumbles",
+          "category": "Core Rules",
+          "tags": ["explode", "crit", "fumble", "ten", "one"],
+          "body": "The d10 is wild at both ends.\n\n- **Natural 10 — Critical Success / Explode.** The die 'pops': roll **another d10 and add it** to your total. If that one is also a 10, roll again and keep adding. There is no ceiling — a single shot can land an impossible hit. On an attack, an exploded roll also means **maximum effect** in the fiction (a perfect placement, a vital strike).\n- **Natural 1 — Critical Failure / Fumble.** The roll automatically **fails** regardless of bonuses, and something goes wrong: a weapon jams, a tool snaps, you're knocked off balance, or you draw exactly the attention you didn't want. On a fumble in combat, the GM may impose **Stunned** or a dropped weapon.\n\nBecause only a **10** explodes and only a **1** fumbles, swings are rare but unforgettable — the texture of a gunfight where anything can happen."
+        },
+        {
+          "id": "neon-opposed",
+          "title": "Opposed & Group Checks",
+          "category": "Core Rules",
+          "tags": ["opposed", "contest", "group"],
+          "body": "**Opposed checks:** when two characters directly contest (stealth vs perception, persuasion vs cool, arm-wrestle, hacking duel), **both roll 1d10 + Stat + Skill**. Higher total wins; **ties favor the defender** or the status quo. Exploding 10s and fumbles apply normally.\n\n**Group checks:** when several characters attempt the same task together (sneaking as a team, searching a room), each rolls. If **at least half** succeed against the DV, the group succeeds. For tasks where one expert can carry the rest (lockpicking, hacking), let the best character roll and allow allies to grant **+1 each (max +3)** for meaningful Help."
+        },
+        {
+          "id": "neon-combat",
+          "title": "Combat & Initiative",
+          "category": "Combat",
+          "tags": ["combat", "initiative", "turn", "action"],
+          "body": "Firefights are fast and lethal. Resolve them in rounds of a few seconds each.\n\n1. **Roll Initiative.** Each combatant rolls **1d10 + Reflexes**. Act from highest to lowest; ties broken by higher Reflexes, then a re-roll.\n2. **On your turn** you get **one Move** and **one Action** (or two Moves, or two Actions if you forgo movement). Common Actions: attack, aim, reload, hack, use a skill, administer First Aid, sprint.\n3. **Aiming:** spend your Action aiming this round to gain **+2 to-hit** with your next shot (next round or later this round if you have a second action). Aimed shots enable **called shots** (head, weak point) at a higher DV.\n4. **Cover** raises the DV to hit you: light cover **+3 DV**, heavy cover **+6 DV**. Stepping out to shoot forfeits cover until your next turn.\n\nReflexes wins fights: it sets your order, your aim, and your dodge."
+        },
+        {
+          "id": "neon-attacks",
+          "title": "Ranged vs Melee Attacks",
+          "category": "Combat",
+          "tags": ["attack", "ranged", "melee", "autofire", "range"],
+          "body": "**To hit, beat the target's Defense Value.** Against a still or unaware target the DV is the range/situation DV; an active target's **Evasion** (1d10 + Reflexes + Evasion) can be used as an opposed defense instead — GM's call by scene.\n\n**Ranged (Reflexes + Handgun/Rifle/Sniper):**\n- Each weapon has an ideal range band. Firing **beyond optimal range** adds **+2–+6 DV**; **point-blank** may lower it.\n- **Autofire:** spray a burst for **+2 to-hit** but spend extra ammo (typically 10 rounds); a hit adds **+1d6 damage**. Loud — draws attention.\n- **Smartlink** cyberware grants **+2 to-hit** with a linked weapon.\n\n**Melee (Reflexes + Melee, or Body + Brawling):**\n- You must be adjacent. Melee can't be Suppressed and ignores ranged cover.\n- Some blades **ignore Stopping Power** (see weapon notes) — the answer to heavily armored foes.\n- **Brawling** covers grapples, throws, and cyber-arm strikes using **Body** instead of Reflexes."
+        },
+        {
+          "id": "neon-armor",
+          "title": "Armor & Damage",
+          "category": "Combat",
+          "tags": ["armor", "sp", "damage", "stopping power"],
+          "body": "On a hit, roll the weapon's **damage dice** and subtract the target's **Stopping Power (SP)**; the remainder comes off **HP**.\n\n> **Damage to HP = (weapon dice) − SP**, minimum 0.\n\n- **Stopping Power (SP)** is the armor value worn on the location hit. Typical SP: light vest **4**, armorjack **7**, heavy armorjack **11–12**, military hardshell **16+**.\n- **Armor degrades:** each time armor stops damage, the GM may reduce its SP by **1** (ablation). It can be repaired (Tech) or replaced.\n- **Armor-piercing:** some weapons and blades **ignore some or all SP** (noted on the weapon). Called shots to unarmored locations bypass SP entirely at a higher DV.\n- **Critical hit (exploded 10):** an exploding attack deals its full rolled total and, in the fiction, a telling wound — GM may add a Wound condition even if HP isn't yet halved."
+        },
+        {
+          "id": "neon-wounds",
+          "title": "Wound States & Death Saves",
+          "category": "Combat",
+          "tags": ["wounds", "death", "mortally wounded", "hp"],
+          "body": "As HP drops, you cross **wound thresholds** that penalize everything you do:\n\n| HP remaining | State | Effect |\n|---|---|---|\n| Above ½ max | Healthy | No penalty |\n| ½ max or less | **Wounded** | −1 to all actions; movement reduced |\n| ¼ max or less | **Seriously Wounded** | −2 to all actions; movement halved |\n| 0 or below | **Mortally Wounded** | Prone, dying — make Death Saves |\n\n**Death Saves:** while Mortally Wounded, at the start of each of your turns roll **1d10 + Body** against a DV that **starts at 10 and rises by +1 each round** you remain untreated. Fail and you die (and, untended, may be harvested or worse). A successful **First Aid** check (DV 13) ends the dying state and restores you to **1 HP + the medic's net successes**. **Stabilized** characters still suffer wound penalties until they heal."
+        },
+        {
+          "id": "neon-healing",
+          "title": "Healing & Recovery",
+          "category": "Combat",
+          "tags": ["healing", "first aid", "rest", "recovery"],
+          "body": "Chrome doesn't make you bulletproof — recovery still takes time, skill, or money.\n\n- **First Aid (Tech + First Aid, DV 13):** in the field, patches **1d6 HP** and ends bleeding/dying; usable once per wound per scene. Net successes above the DV add HP.\n- **Rest:** a full **night's safe rest** recovers HP equal to your **Body** score. A day of bed rest in safety recovers **2× Body**.\n- **Clinic / Ripperdoc:** for cash, a proper med-bay restores you to full over a downtime period and can reattach limbs, re-grow tissue, or swap cyberware.\n- **Biomonitor & regen cyberware** can accelerate this (and ping corporate scanners).\n- **Humanity does not heal with rest** — see Cyberware & Humanity."
+        },
+        {
+          "id": "neon-net",
+          "title": "Netrunning Basics",
+          "category": "Subsystems",
+          "tags": ["net", "netrunning", "hacking", "ice", "interface"],
+          "body": "Netrunners jack into the **NET** to seize control of the world's machines from the shadows.\n\n- **Interface check (Intellect + Interface):** the runner's core action. Each successful breach against the local system's DV lets the runner take one NET action: open/lock doors, blind cameras, control turrets and drones, pull data, or attack a target's cyberware.\n- **ICE (Intrusion Countermeasures):** the system's defenders. Passing the DV gets past **White ICE** (passive locks). **Black ICE** fights back — on a failed breach (or a fumble), Black ICE deals **NET damage** (rolled like weapon dice) directly to the runner's HP, and a fatal hit can **flatline** the runner's brain for real.\n- **Time pressure:** treat a deep run as a Clock — each round in the system risks tracing. A traced runner gives away their physical location.\n- **Defending:** a non-runner targeted by hostile programs defends with **Intellect + Cool** (or a defensive program) against the attacker's total.\n- **Reality matters:** the runner's meat body sits exposed while jacked in. Guard it."
+        },
+        {
+          "id": "neon-cyberware",
+          "title": "Cyberware & Humanity",
+          "category": "Subsystems",
+          "tags": ["cyberware", "humanity", "cyberpsychosis", "chrome"],
+          "body": "Every implant trades part of your soul for an edge.\n\n- **Humanity = Presence × 6.** It's your grip on empathy and self.\n- **Installing cyberware costs Humanity.** Minor chrome (smartlink, cybereye) costs **1d6**; serious chrome (mantis blades, full cyberlimb, subdermal armor) costs **2d6–3d6**; military/Sandevistan-grade gear costs more. The GM rolls the loss when it's installed.\n- **Low Humanity warps you:** below **half** your maximum, you grow cold, detached, prone to violence — apply −1 to social rolls relying on warmth.\n- **Humanity 0 → Cyberpsychosis.** Empathy is gone; the character becomes an NPC the GM controls (or MaxTac's next target). This is the system's central tragedy: power is real, and it has a price.\n- **Restoring Humanity:** therapy, meaningful human connection, and downtime can recover Humanity slowly — but never above your Presence-based maximum, and never as fast as you spend it. **Empathy is the one thing you can't buy back at the ripperdoc.**"
+        },
+        {
+          "id": "neon-skills",
+          "title": "Skills Overview",
+          "category": "Characters",
+          "tags": ["skills", "checks", "build"],
+          "body": "Skills are the trained edge you add to the matching Stat. Common skills and their usual Stat:\n\n| Skill | Stat | Use |\n|---|---|---|\n| Handgun / Rifle / Sniper | Reflexes | Ranged attacks by weapon class |\n| Melee | Reflexes | Blades and clubs in close |\n| Brawling | Body | Fists, grapples, cyber-arm strikes |\n| Evasion | Reflexes | Dodging attacks |\n| Stealth | Reflexes | Moving unseen |\n| Athletics | Body | Climb, jump, swim, sprint |\n| Drive / Pilot | Reflexes | Vehicles and AVs |\n| Perception | Intellect | Spotting threats, lies, tails |\n| Interface | Intellect | Netrunning and electronics warfare |\n| Tech / Electronics | Tech | Build, repair, defuse, install |\n| First Aid / Surgery | Tech | Stabilize and heal |\n| Persuasion / Deception | Presence | Charm, con, negotiate |\n| Intimidation | Cool | Threaten and dominate |\n| Streetwise | Presence | The fixers, fences, and rumors |\n\nA starting runner has a handful of skills at **+2 to +5** and a signature at **+6**. Improve them with Improvement Points."
+        },
+        {
+          "id": "neon-creation",
+          "title": "Character Creation",
+          "category": "Characters",
+          "tags": ["creation", "build", "stats", "role"],
+          "body": "1. **Stats.** Six stats start at **4** each. Distribute **12 additional points**, max **8** at creation (cap **10** later). Reflexes, Body, Intellect, Cool, Tech, Presence.\n2. **Derived values:** **HP = 10 + Body×2** · **Humanity = Presence×6** · **Initiative = Reflexes** · **Armor (SP) = 0** until you put gear on.\n3. **Role.** Pick the archetype that fits: **Solo** (combat), **Netrunner** (the NET), **Tech** (build/repair), **Fixer** (deals & contacts), **Media**, **Nomad** (vehicles), **Medtech**, **Exec**. Your role suggests signature skills.\n4. **Skills.** Spread skill points: one signature at **+6**, several at **+2 to +4**. (GM sets the budget; ~40 points is a generous start.)\n5. **Cyberware & gear.** Buy starting chrome and roll its Humanity cost. Pick a weapon, armor (sets SP), and a cyberdeck if you run the NET.\n6. **Lifepath.** Where you're from, who you owe, and the one thing you'd cross the city for. The street remembers."
+        },
+        {
+          "id": "neon-advance",
+          "title": "Advancement (Improvement Points)",
+          "category": "Characters",
+          "tags": ["xp", "ip", "advancement", "improve"],
+          "body": "Characters grow through **Improvement Points (IP)**, awarded **per session** (typically **a handful**) based on what they did, learned, and risked.\n\n- **Raise a Skill:** cost roughly **(new rating × 1)** IP — higher ratings cost more. Use a skill successfully in play to justify training it.\n- **Raise a Stat:** expensive and slow — major training, surgery, or story milestones, at the GM's discretion (cap **10**).\n- **New Skill at +1:** a few IP to pick up a brand-new skill.\n- **Cyberware** is bought with **cash (eddies)**, not IP — but remember the **Humanity** cost.\n\nSurviving a run is its own reward. Let players narrate a scar earned, a contact made, or a line they swore they'd never cross again."
+        },
+        {
+          "id": "neon-conditions",
+          "title": "Conditions Overview",
+          "category": "Reference",
+          "tags": ["conditions", "status", "stunned", "suppressed"],
+          "body": "Quick reference for the system's status conditions:\n\n| Condition | Effect |\n|---|---|\n| **Wounded** | HP ≤ ½ max. −1 to all actions; movement reduced. |\n| **Seriously Wounded** | HP ≤ ¼ max. −2 to all actions; movement halved. |\n| **Mortally Wounded** | HP ≤ 0. Prone, dying; make a rising-DV Death Save each turn or die. |\n| **Stunned** | Lose your next action; −2 defense until your following turn. |\n| **Suppressed** | Pinned by fire: can't leave cover, −3 to all actions until the fire lifts or you break and run. |\n| **Cyberpsychosis** | Humanity 0: empathy gone, GM-controlled; needs therapy and Humanity to recover. |\n\nConditions stack with wound penalties — a Wounded, Suppressed runner is in real trouble."
+        },
+        {
+          "id": "neon-cheat",
+          "title": "GM Cheat Sheet",
+          "category": "Reference",
+          "tags": ["summary", "cheat", "quick"],
+          "body": "- **Resolve:** 1d10 + Stat + Skill ≥ **DV**. 10 explodes (roll again, add); natural 1 fumbles (auto-fail + mishap).\n- **DV ladder:** Everyday 9 · Difficult 13 · Professional 17 · Heroic 21 · Incredible 25 · Legendary 29.\n- **Initiative:** 1d10 + Reflexes. One Move + one Action per turn.\n- **Cover DV:** light +3, heavy +6. Aim = +2 next shot. Autofire = +2 to-hit, +1d6 dmg, extra ammo, loud.\n- **Damage:** weapon dice − SP = HP loss. Some blades/AP ignore SP.\n- **Wounds:** ≤½ HP Wounded (−1) · ≤¼ Seriously Wounded (−2) · 0 Mortally Wounded (rising-DV Death Save).\n- **Heal:** First Aid (DV 13) field-patches & stabilizes; rest recovers Body/night.\n- **NET:** Intellect + Interface vs ICE; Black ICE bites back (real damage).\n- **Humanity = Presence×6.** Chrome costs Humanity; 0 = Cyberpsychosis. Empathy can't be bought back."
+        }
+      ],
+      "rewardStat": { "key": "ip", "name": "Improvement Points", "perSession": "~per session" },
+      "npcStatFormat": "REF / BOD / INT / COO / TEC / PRE | HP | SP",
+      "_seed": true
+    }
+  ]
+}

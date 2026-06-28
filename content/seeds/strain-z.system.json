@@ -1,0 +1,182 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_strainz",
+      "name": "STRAIN Z",
+      "tagline": "3d6 Roll-Under survival horror",
+      "version": "1.0",
+      "author": "STRAIN Z",
+      "summary": "A slow-burn survival-horror system. Roll 3d6 and try to roll equal to or under your Attribute plus an Ease Modifier. Lethal, fast, and built on dread: the cold, fuel, panic, and other living people are the real threats.",
+      "theme": {
+        "accent": "#ff2a1f",
+        "accent2": "#d81a10",
+        "cool": "#92bad6",
+        "displayFont": "Oswald",
+        "titleFont": "Creepster",
+        "monoFont": "Share Tech Mono",
+        "mood": "horror"
+      },
+      "dice": {
+        "notation": "3d6",
+        "resolution": "roll-under",
+        "summary": "Roll 3d6 ≤ Attribute + Ease. Natural 3 = crit success, natural 18 = crit failure. Beat the target by 5+ for a Clean Hit (+2 damage).",
+        "crit": { "success": [3], "failure": [18] },
+        "cleanHit": { "by": 5, "effect": "+2 damage (may stagger / knock prone)" }
+      },
+      "attributes": [
+        { "key": "brawn", "name": "Brawn", "abbr": "BRN", "default": 8, "min": 3, "max": 16, "desc": "Melee, lifting, endurance, resisting cold & illness, soaking damage." },
+        { "key": "agility", "name": "Agility", "abbr": "AGI", "default": 8, "min": 3, "max": 16, "desc": "Ranged attacks, driving, climbing, stealth, reflexes, fine motor work." },
+        { "key": "wits", "name": "Wits", "abbr": "WIT", "default": 8, "min": 3, "max": 16, "desc": "Perception, mechanics, medicine, scavenging, planning, holding your nerve." },
+        { "key": "charm", "name": "Charm", "abbr": "CHA", "default": 8, "min": 3, "max": 16, "desc": "Persuasion, lying, leadership, reading people, calming panic." }
+      ],
+      "attributeRules": { "start": 8, "pointsToDistribute": 10, "startMin": 3, "startMax": 14, "hardMax": 16 },
+      "deriveds": [
+        { "key": "vit", "name": "Vitality", "abbr": "VIT", "formula": "6 + brawn", "min": 0, "desc": "Physical buffer before you go Down. Down at 0.", "resource": true },
+        { "key": "composure", "name": "Composure", "abbr": "CMP", "formula": "3 + (wits>=12?1:0) + (charm>=12?1:0)", "max": 5, "min": 0, "desc": "Your nerve under horror. Break at 0.", "resource": true }
+      ],
+      "easeLadder": [
+        { "name": "Simple", "mod": 2, "use": "Favorable conditions, good tools, no pressure" },
+        { "name": "Average", "mod": 0, "use": "A fair, default challenge" },
+        { "name": "Hard", "mod": -2, "use": "Bad footing, poor light, improvised tools, real danger" },
+        { "name": "Desperate", "mod": -4, "use": "Long odds, terrible conditions, doing it while fighting" },
+        { "name": "Heroic", "mod": -6, "use": "Should-be-impossible; only in extremis" }
+      ],
+      "tracks": [
+        {
+          "key": "cold",
+          "name": "Cold & Exposure",
+          "type": "ladder",
+          "color": "#92bad6",
+          "desc": "Hourly Brawn check, difficulty worsening one step each consecutive exposed hour. Warmth halts and reverses it (recover one stage per ~30 min).",
+          "stages": [
+            { "name": "Warm", "effect": "No penalty." },
+            { "name": "Chilled", "effect": "−1 to all rolls." },
+            { "name": "Shivering", "effect": "−2 to all rolls; fine-motor tasks one step harder." },
+            { "name": "Frostnipped", "effect": "−4 to all rolls; hand tasks at Desperate; risk losing fingers/toes." },
+            { "name": "Hypothermic", "effect": "Incapacitated, drifting under. Without warming, die in ~1 hour — then turn." }
+          ]
+        }
+      ],
+      "conditions": [
+        { "name": "Shaking Hands", "effect": "−2 to your next action." },
+        { "name": "Tunnel Vision", "effect": "Can't perceive or act on anything outside your fixation." },
+        { "name": "Rooted", "effect": "Can't move from your spot for a round." },
+        { "name": "Bitten", "effect": "Skin broken by the dead — die in 1d6 days, then turn. No cure." },
+        { "name": "Bleeding Out (Down)", "effect": "At 0 VIT. Dies in 1d6 rounds (combat) without aid." },
+        { "name": "Broken (0 Composure)", "effect": "Freeze, Flight, Fixate, or Lash Out until steadied." },
+        { "name": "Injured", "effect": "A lasting wound from being stabilized; penalties until proper rest & care." }
+      ],
+      "clockTemplates": [
+        { "name": "The Highway Wakes", "size": 6, "desc": "Fills as people die and as the players make noise. When full, the slaughter becomes general." },
+        { "name": "Someone Dies Inside", "size": 6, "desc": "The crowded ark / safe-zone clock. When full, the turn begins in a locked, crowded room." },
+        { "name": "The Horde Turns", "size": 6, "desc": "Fills with every noise and misstep. When full, the crowd floods toward you as one." },
+        { "name": "Across", "size": 6, "desc": "Progress through a gauntlet (e.g. the Whiskey Row alleys). Fill it before the Horde turns." },
+        { "name": "Fuel", "size": 4, "desc": "The SUV's tank in quarters. Idling with the heater burns ~a quarter per 2–3 hours." }
+      ],
+      "backgrounds": [
+        { "name": "Off-Duty Nurse", "knack": "Medicine & stabilizing the wounded", "gear": "Trauma kit, scrubs (extra layer), penlight" },
+        { "name": "Ranch Hand", "knack": "Cold endurance & manual labor", "gear": "Work gloves, multi-tool, length of rope, lighter" },
+        { "name": "Long-Haul Trucker", "knack": "Driving & vehicle know-how", "gear": "CB radio knowledge, tire iron, thermos, road atlas" },
+        { "name": "Hunter", "knack": "Rifles & tracking", "gear": "Hunting rifle (if allowed) or the eye for one, knife, jerky" },
+        { "name": "Mechanic", "knack": "Repairs, hotwiring, siphoning", "gear": "Toolbox, flashlight, siphon hose, shop rag, half-tank fuel can" },
+        { "name": "Schoolteacher", "knack": "Keeping people calm & organized", "gear": "First-aid basics, granola bars, reroll one Composure check/session" },
+        { "name": "Off-Duty Cop", "knack": "Firearms & spotting threats", "gear": "Pistol + 2 mags, cuffs, flashlight" },
+        { "name": "Bartender", "knack": "Reading & defusing people", "gear": "Charm Knack on de-escalation, a flask, surprising toughness" },
+        { "name": "College Athlete", "knack": "Climbing, sprinting, leaping", "gear": "Good shoes (rare!), water bottle, raw Agility" },
+        { "name": "Retired Vet (Animal or Army)", "knack": "GM's choice: field medicine or steady hands", "gear": "A useful old habit and a calm under fire" }
+      ],
+      "weapons": [
+        { "name": "Fists / kick", "damage": "1d3", "notes": "Bad idea vs. the dead — bite risk." },
+        { "name": "Improvised (branch, bottle)", "damage": "1d6", "notes": "May break on a Critical Failure." },
+        { "name": "Knife / hatchet", "damage": "1d6", "notes": "Concealable, quiet, great for headshots." },
+        { "name": "Bat / crowbar / tire iron", "damage": "1d6+1", "notes": "Sturdy, reusable, quiet." },
+        { "name": "Fire axe / sledge", "damage": "2d6", "notes": "Heavy, slow, loud impacts." },
+        { "name": "Pistol", "damage": "2d6", "notes": "Loud. +1 Horde clock per shot." },
+        { "name": "Shotgun (close)", "damage": "3d6", "notes": "Very loud. Devastating up close." },
+        { "name": "Hunting rifle", "damage": "2d6+2", "notes": "Loud. Best tool for ranged headshots." }
+      ],
+      "vehicles": [
+        { "name": "Family SUV (theirs)", "toughness": "Average", "notes": "Warm, thirsty, useless in deep mud." },
+        { "name": "Lifted pickup", "toughness": "Tough", "notes": "Tempting for the median — until it sinks." },
+        { "name": "ADOT Snowplow", "toughness": "Very Tough", "notes": "Chains, weight, a blade that shoves cars. The campaign's golden ticket." },
+        { "name": "Ambulance", "toughness": "Average", "notes": "Supplies inside; awkward; possibly occupied." },
+        { "name": "Sedan / minivan", "toughness": "Fragile", "notes": "Plentiful, low on fuel, often with grim contents." }
+      ],
+      "bestiary": [
+        { "name": "Wakers (Freshly Turned)", "defense": "Hard (−2 to hit)", "body": 6, "speed": "Fast", "bite": "Any clean hit breaks skin → infection clock.", "notes": "Recently dead, intact, fast, eerily coordinated — they remember how to run, climb, and open doors for a while. This is what makes the first hour terrifying." },
+        { "name": "Shamblers", "defense": "Average", "body": 5, "speed": "Slow", "notes": "The standard dead after stiffening. Individually manageable; deadly in numbers, in the dark, or when cornered." },
+        { "name": "Cold-Stiffs", "defense": "Simple (+2 to hit)", "body": 5, "speed": "Very Slow", "notes": "Walkers seized by deep cold. A gift and a trap — they thaw and reactivate near heat sources. Don't lead them somewhere warm." },
+        { "name": "The Trapped", "defense": "Simple", "body": null, "speed": "Stationary", "notes": "Pinned in seatbelts, wreckage, collapsed structures. Can't pursue, but lunge and bite. Whole rows of I-17 cars become this overnight." },
+        { "name": "Crawlers", "defense": "Hard (low, hard to hit clean)", "body": null, "speed": "Crawl", "notes": "Any walker reduced below the waist. Slow but easy to overlook in snow, under cars, in tall grass. The ankle-grab in the dark." },
+        { "name": "The Horde", "defense": "—", "body": null, "speed": "Mass clock", "notes": "Treat a crowd as a single advancing threat with a Clock. Loud actions, lights, and fire add ticks. You can't win — buy time, redirect, or escape. When the clock fills, it's on you." }
+      ],
+      "tables": [
+        { "id": "scavenging", "name": "Scavenging (d6)", "die": "d6", "desc": "Roll on a success; GM picks the local flavor.", "entries": [
+          "Survival score — cold gear, a sleeping bag, real boots.",
+          "Fuel — a partial can, or a car worth siphoning.",
+          "Medical — bandages, antibiotics, painkillers (or animal equivalents).",
+          "Tools / weapon — multi-tool, crowbar, a few rounds of ammo.",
+          "Sustenance — food, water, a working lighter, batteries.",
+          "Complication with a prize — the good stuff and a guarded survivor, a Cold-Stiff cluster, or a noise that ticks a clock."
+        ] },
+        { "id": "encounters", "name": "Random Roadside Encounters (d6)", "die": "d6", "entries": [
+          "A car with the doors open and the family still belted in, beginning to stir (Trapped).",
+          "Survivors flagging you down — desperate, or bait.",
+          "A military checkpoint turning people back at gunpoint.",
+          "A lone Waker sprinting flat-out down the centerline toward your headlights.",
+          "Fire on the horizon and the question of whether to go toward the warmth.",
+          "Stillness — and the slow realization of why it's so quiet here."
+        ] }
+      ],
+      "rollPresets": [
+        { "name": "Brawn check", "attr": "brawn", "ease": "Average" },
+        { "name": "Agility check", "attr": "agility", "ease": "Average" },
+        { "name": "Wits check", "attr": "wits", "ease": "Average" },
+        { "name": "Charm check", "attr": "charm", "ease": "Average" },
+        { "name": "Seize the Moment", "attr": "agility", "ease": "Average", "note": "Success = Fast Phase." },
+        { "name": "Melee attack", "attr": "brawn", "ease": "Average", "note": "Apply target Defense step." },
+        { "name": "Ranged attack", "attr": "agility", "ease": "Average", "note": "Apply Defense + range." },
+        { "name": "Headshot", "attr": "agility", "ease": "Desperate", "note": "On hit, instakill a zombie. −2 more beyond short range." },
+        { "name": "Cold check", "attr": "brawn", "ease": "Average", "note": "Worsens one step each exposed hour." },
+        { "name": "Hold your nerve", "attr": "wits", "ease": "Hard", "note": "Fail = lose 1 Composure." },
+        { "name": "Steady a friend", "attr": "charm", "ease": "Average", "note": "Restore 1 Composure to an ally." },
+        { "name": "Siphon fuel", "attr": "agility", "ease": "Average", "note": "Hard if improvising; one step worse if Cold-impaired." },
+        { "name": "Stabilize (Medicine)", "attr": "wits", "ease": "Average", "note": "Hard without a kit. Leaves an Injury." }
+      ],
+      "rewardStat": { "key": "grit", "name": "Grit", "perSession": 1, "desc": "1 per surviving session; 3 = +1 attribute, 1 = a Knack." },
+      "advancement": {
+        "perSession": "1 Grit per surviving character.",
+        "costs": [
+          "3 Grit → raise one Attribute by +1 (post-creation cap 16).",
+          "1 Grit → learn a new Knack, or permanently raise max Composure by 1 (cap 6)."
+        ]
+      },
+      "npcStatFormat": "Brawn / Agility / Wits / Charm | VIT | Composure",
+      "characterTemplate": {
+        "pcFields": ["background", "knacks", "gear", "tie", "fear", "grit"],
+        "note": "Everyone begins in street clothes for a warm theme park — sneakers, hoodies, no cold-weather gear. Surviving Session 1 is partly a race to get warm."
+      },
+      "reference": [
+        { "id": "core-mechanic", "title": "The Core Mechanic", "category": "Core Rules", "tags": ["resolve", "3d6", "roll-under"], "body": "When an outcome is uncertain and failure is interesting, roll **3d6** and try to roll **equal to or under** your relevant Attribute, adjusted by an **Ease Modifier**.\n\n> **Success:** total ≤ (Attribute + Ease Modifier)\n> **Failure:** total > (Attribute + Ease Modifier)\n\nBecause you're rolling three dice, results cluster around **10–11**. Wild swings are rare, so a competent character is *reliably* competent. This is deliberate: STRAIN Z rewards planning over gambling.\n\n**Don't roll for everything.** If there's no real risk and no time pressure, just narrate success. Roll when a failure would cost something — time, blood, fuel, Composure, or safety." },
+        { "id": "attributes", "title": "The Four Attributes", "category": "Core Rules", "tags": ["brawn", "agility", "wits", "charm"], "body": "All start at **8**. Distribute **10 points**. Maximum starting score is **14**.\n\n| Attribute | Governs |\n|---|---|\n| **Brawn** | Melee, lifting, endurance, resisting cold & illness, soaking damage |\n| **Agility** | Ranged attacks, driving, climbing, stealth, reflexes, fine motor work |\n| **Wits** | Perception, mechanics, medicine, scavenging, planning, holding your nerve |\n| **Charm** | Persuasion, lying, leadership, reading people, calming panic |" },
+        { "id": "ease", "title": "Ease Modifiers (Difficulty)", "category": "Core Rules", "tags": ["difficulty", "modifier"], "body": "The GM sets difficulty by choosing how the task bends the odds:\n\n| Difficulty | Modifier | Use for… |\n|---|---|---|\n| **Simple** | +2 | Favorable conditions, good tools, no pressure |\n| **Average** | +0 | A fair, default challenge |\n| **Hard** | −2 | Bad footing, poor light, improvised tools, real danger |\n| **Desperate** | −4 | Long odds, terrible conditions, doing it *while* fighting |\n| **Heroic** | −6 | Should-be-impossible; only attempt in extremis |" },
+        { "id": "probability", "title": "Probability Quick-Reference", "category": "Core Rules", "tags": ["odds", "chance"], "body": "Chance of rolling **equal to or under** a target number on 3d6:\n\n| Target | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14 | 15 | 16 |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n| **Success** | 9% | 16% | 26% | 38% | 50% | 63% | 74% | 84% | 91% | 95% | 98% |\n\nAn Average roll at Brawn 12 ≈ 74%. The same task while freezing and under attack (Desperate, −4 → target 8) drops to ≈ 26%. Conditions matter more than raw stats." },
+        { "id": "criticals", "title": "Criticals & Opposed Checks", "category": "Core Rules", "tags": ["crit", "opposed"], "body": "- **Natural 3** = **Critical Success.** Best possible outcome, plus a bonus.\n- **Natural 18** = **Critical Failure.** Something goes wrong beyond the miss — a jam, a snapped tool, a noise that draws the dead.\n\n**Opposed Checks:** when two people clash, both roll under their relevant Attribute. Whoever **succeeds by more** (the larger gap between roll and target) wins. Ties favor the defender / the status quo." },
+        { "id": "creation", "title": "Character Creation", "category": "Characters", "tags": ["creation", "build"], "body": "1. **Attributes.** Start 8/8/8/8, spend 10 points, max 14.\n2. **Derived stats:** **VIT = 6 + Brawn** (your buffer; Down at 0). **Composure = 3** (+1 if Wits ≥ 12, +1 if Charm ≥ 12, max 5).\n3. **Background.** Pick one — it grants a **Knack** (treat one specific kind of task as one step easier) and starting gear.\n4. **The Vacation Problem.** Everyone begins in street clothes for a warm theme park. This is mechanically dangerous (see Cold). Surviving Session 1 is partly a race to *get warm*.\n5. **A Tie & a Fear.** Note one person/thing your character protects, and one thing that breaks their nerve." },
+        { "id": "advancement", "title": "Advancement (Grit)", "category": "Characters", "tags": ["xp", "grit", "advance"], "body": "At the **end of each session**, every surviving character gains **1 Grit**.\n- Spend **3 Grit** → raise one Attribute by **+1** (post-creation cap **16**).\n- Spend **1 Grit** → learn a **new Knack**, or permanently raise max Composure by 1 (cap 6).\n\nSurviving a session is itself a milestone — let players narrate a small change (a scar, a new resolve, a thing they'll never do again)." },
+        { "id": "combat-round", "title": "Order of a Combat Round", "category": "Combat", "tags": ["initiative", "round", "seize"], "body": "Combat is fast and dangerous. A few seconds of bad luck can end a person.\n\n1. **Seize the Moment.** Each PC rolls an **Agility** check (Average). Success = you act in the **Fast Phase**, before the threats. Failure = **Slow Phase**, after. (Skip in a clear ambush — the ambusher goes first.)\n2. **Fast Phase actions**, then **enemy actions**, then **Slow Phase actions**.\n3. Repeat each round until it's over.\n\nA character gets **one meaningful action** per round, plus a few words and a step." },
+        { "id": "attacking", "title": "Attacking & Damage", "category": "Combat", "tags": ["attack", "damage", "clean hit"], "body": "- **Melee:** roll under **Brawn**, modified by the target's **Defense** step.\n- **Ranged:** roll under **Agility**, modified by Defense + range.\n- **Clean Hit:** if you succeed by **5 or more**, you deal **+2 damage** (and may stagger or knock prone).\n\nOn a hit, roll the weapon's dice and subtract VIT. Guns are *loud* — a gunshot fills the nearest **Horde / Wakes clock** by 1." },
+        { "id": "headshots", "title": "Headshots & the Dead", "category": "Combat", "tags": ["headshot", "kill", "zombie"], "body": "- A zombie **only truly dies when its brain is destroyed.** Body damage cripples but doesn't stop it.\n- **Headshot:** declare it; take a **−4 (Desperate)** penalty to the attack. On a hit, **instantly destroy** a zombie. Ranged headshots **beyond short range** take an *additional* −2.\n- **Crippling instead:** dealing damage ≥ a zombie's **Body** rating to a limb **severs** it. Enough damage drops a walker to a **crawler** — slow, low, far less dangerous, but still a bite threat until the head is destroyed." },
+        { "id": "going-down", "title": "Wounds & Going Down", "category": "Combat", "tags": ["down", "vit", "stabilize"], "body": "- At **0 VIT**, a character is **Down**: bleeding out, unconscious, or crippled. Without aid they die in **1d6 rounds** (combat) or **1d6 × 10 minutes** (after).\n- A **Medicine (Wits)** check — **Average** with a kit / **Hard** without — stabilizes them at 1 VIT but leaves a lasting **Injury** until proper rest and care.\n- The cardinal rule: **whoever dies, by any cause, reanimates in 2–6 hours.** A downed ally is a future threat unless they recover — or unless someone makes a terrible choice." },
+        { "id": "infection", "title": "The Bite & Infection", "category": "Survival", "tags": ["bite", "infection", "turn", "reanimate"], "body": "Everyone alive is *already a carrier*. The Strain is dormant in the living and activates at death.\n\n- **Death by any cause → reanimation in 2–6 hours.** Brain destruction prevents it.\n- **A bite that breaks skin** introduces an aggressive secondary infection. **Antibiotics do not cure it.** The victim runs a soaring fever and **dies in 1d6 days**, then turns. Roll the 1d6 secretly; let dread do the work.\n- **Scratches & contaminated wounds** fester. Without clean care, a **Brawn** check each day (worsening) or slide toward sepsis — which ends the same way.\n\nThere is **no cure** in STRAIN Z. The drama is in how people live with the clock." },
+        { "id": "cold", "title": "Cold & Exposure (Central System)", "category": "Survival", "tags": ["cold", "exposure", "hypothermia", "snow"], "body": "The snow is the campaign's quiet villain. Track it.\n\n**When it bites:** any meaningful stretch (about **an hour**) below freezing without adequate warmth, each makes a **Brawn** check. The difficulty worsens **one step per consecutive exposed hour**: 1st hour **Average**, 2nd **Hard**, 3rd **Desperate**.\n\n**On a failure, advance one Cold Stage:** Chilled (−1) → Shivering (−2) → Frostnipped (−4) → Hypothermic (incapacitated, die in ~1 hour, then turn).\n\n**Mitigation:** proper cold gear lets you **skip** the hourly check in moderate cold; huddling gives a one-step bonus; running the heater keeps everyone safe but **burns fuel**. *Looting a dead motorist's parka matters more than finding a gun.*" },
+        { "id": "composure", "title": "Composure & Panic (The Mind)", "category": "Survival", "tags": ["composure", "panic", "horror", "break"], "body": "Composure (max 5) is your buffer against horror.\n\n**Losing it:** witnessing something shattering forces a **Wits** check, difficulty scaled to the horror. **Fail = lose 1 Composure** and take a temporary **Condition** (shaking hands, tunnel vision, rooted).\n\n**Breaking:** at **0 Composure**, the character **Breaks** — Freeze, Flight, Fixate, or Lash Out.\n\n**Recovering:** safety + rest restores 1 per scene of genuine respite. An ally can spend their action on a **Charm** check (Average) to steady a panicking friend. Warmth, food, and small human moments are the real medicine." },
+        { "id": "scavenging", "title": "Scavenging, Fuel & Vehicles", "category": "Survival", "tags": ["scavenge", "fuel", "vehicle", "siphon"], "body": "**Scavenging** is a **Wits** check; the GM sets difficulty by how picked-over the place is. A Critical Failure draws attention.\n\n**Fuel** is the campaign's second currency. Track the SUV's tank loosely in quarters. **Idling with the heater on** burns roughly **a quarter-tank per 2–3 hours.** **Siphoning** is an **Agility/Wits** check (Average with a hose, Hard improvising), one step harder while Cold-impaired." },
+        { "id": "hordes", "title": "The Horde (Mass Rules)", "category": "Bestiary", "tags": ["horde", "clock", "mass"], "body": "Treat a crowd as **a single advancing threat with a Clock.** Each tick the horde closes distance or breaches a barrier. Loud actions, lights, and fire add ticks. PCs can't win a fight against a horde — they buy time, redirect it (noise elsewhere), or escape. When the Clock fills, the horde is *on* them: everyone in reach makes a Desperate Agility check to break free or starts taking bites. **Hordes are a countdown, not an enemy to defeat.**" },
+        { "id": "cheat-sheet", "title": "GM Cheat Sheet", "category": "Reference", "tags": ["summary", "cheat", "quick"], "body": "- **Resolve:** roll 3d6 ≤ Attribute + Ease. Nat 3 = crit success; Nat 18 = crit failure. Don't roll without stakes.\n- **Ease:** Simple +2 / Average +0 / Hard −2 / Desperate −4 / Heroic −6.\n- **Clean Hit:** beat the target by 5+ → +2 damage.\n- **Headshot:** −4 to hit (−6 at range); on hit, instakill a zombie.\n- **Zombies die only via the head.** Body damage cripples.\n- **Bite that breaks skin:** die in 1d6 days, then turn. **Any death:** turn in 2–6 hrs.\n- **Cold:** hourly Brawn check, worsening a step each hour. Warmth halts & reverses it.\n- **Composure (max 5):** horror = Wits check or lose 1. At 0, you Break.\n- **Hordes & noise = Clocks**, not HP. Guns and screams fill them." }
+      ],
+      "_seed": true
+    }
+  ]
+}

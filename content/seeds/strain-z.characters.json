@@ -1,0 +1,75 @@
+{
+  "collection": "characters",
+  "docs": [
+    {
+      "id": "npc_mac", "name": "Mac", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Aggressive trucker, wildcard", "portraitSeed": "mac-trucker", "threat": false,
+      "attrs": { "brawn": 13, "agility": 9, "wits": 9, "charm": 8 },
+      "tags": ["Session 1", "recurring", "wildcard"],
+      "statBlock": "13 / 9 / 9 / 8 | VIT 19 | Comp 3",
+      "wants": "To feel in control.",
+      "notes": "Bully out of fear; tire iron. Works car to car demanding people 'share' food and water. Not (yet) a monster — scared and bullying. If he lives, a recurring wildcard: bully, rival, or unlikely ally depending on how the players treated him."
+    },
+    {
+      "id": "npc_sarah", "name": "Sarah", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Terrified mother — the emotional anchor", "portraitSeed": "sarah-mother", "threat": false,
+      "attrs": { "brawn": 9, "agility": 10, "wits": 11, "charm": 12 },
+      "tags": ["Session 1", "anchor", "doomed"],
+      "statBlock": "9 / 10 / 11 / 12 | VIT 15 | Comp 2 (shattered)",
+      "wants": "To save her son.",
+      "notes": "The heart of Session 1. Almost certainly lost — but how the players respond defines the table's tone for the whole campaign. Can be introduced at the jam, the rest area, or on the hike (Sarah, Anywhere)."
+    },
+    {
+      "id": "npc_leo", "name": "Leo", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Sarah's feverish son → the first true horror", "portraitSeed": "leo-boy", "threat": true,
+      "attrs": { "brawn": 8, "agility": 12, "wits": 8, "charm": 8 },
+      "tags": ["Session 1", "Waker"],
+      "statBlock": "Fever victim → Waker (use Freshly Turned block)",
+      "notes": "A boy sweating through a 104° fever. His death → reanimation around Hour 5 is the campaign's first true horror. Use the Wakers stat block when he turns."
+    },
+    {
+      "id": "npc_paramedic", "name": "The Paramedic", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Bitten, doomed, but useful and willing", "portraitSeed": "paramedic", "threat": false,
+      "attrs": { "brawn": 10, "agility": 12, "wits": 13, "charm": 11 },
+      "tags": ["Session 1", "doomed", "companion"],
+      "statBlock": "10 / 12 / 13 / 11 | VIT 16 | Comp 3 → bitten (1d6 days)",
+      "wants": "To do some good with the time left.",
+      "notes": "Sprints from a trapped ambulance to do CPR on Leo; gets bitten pulling Leo off Sarah. Skilled, willing, dying — a heartbreaking traveling companion who knows their clock is ticking."
+    },
+    {
+      "id": "npc_rick", "name": "Radio Rick", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Prepper, ham operator, intel source, 'build a life' refuge", "portraitSeed": "radio-rick", "threat": false,
+      "attrs": { "brawn": 10, "agility": 9, "wits": 14, "charm": 12 },
+      "tags": ["recurring", "ally", "compound"],
+      "statBlock": "10 / 9 / 14 / 12 | VIT 16 | Comp 4",
+      "wants": "To keep his people alive and not be alone out here.",
+      "notes": "Chino Valley prepper on several acres — well, chickens, horses, fuel, food stores, defensible ground. Paranoid, prickly, deeply decent to people who pull their weight. Distrusts the Guard on principle (and turns out right). The campaign's off-grid intel source and its 'build a life' refuge."
+    },
+    {
+      "id": "npc_reyes", "name": "Captain Reyes", "kind": "npc", "systemId": "sys_strainz",
+      "role": "National Guard commander — impossible triage", "portraitSeed": "captain-reyes", "threat": false,
+      "attrs": { "brawn": 11, "agility": 10, "wits": 13, "charm": 11 },
+      "tags": ["Act II", "Act III", "Guard", "Hearthstone"],
+      "statBlock": "11 / 10 / 13 / 11 | VIT 17 | Comp 4",
+      "wants": "To save as many as the orders allow.",
+      "notes": "Commands the Deep Well Ranch safe zone ('Operation Hearthstone'). Doing visibly impossible math behind her eyes. Authority that can shelter you, manage you, and — at the end — write you off when Ashfall executes. The safe zone is the threat in a uniform."
+    },
+    {
+      "id": "npc_rosas", "name": "Dr. Elena Rosas", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Vet in Dewey, reluctant leader of armed ranchers", "portraitSeed": "elena-rosas", "threat": false,
+      "attrs": { "brawn": 9, "agility": 11, "wits": 13, "charm": 12 },
+      "tags": ["Act II", "Dewey", "ally"],
+      "statBlock": "9 / 11 / 13 / 12 | VIT 15 | Comp 4",
+      "wants": "To protect the people already inside her walls.",
+      "notes": "Exhausted competence; reluctant leader; trades care for trust earned. A possible long-term ally and a source of hard truths about the infection. Holds the Dewey vet clinic (medicine when the hospitals burn)."
+    },
+    {
+      "id": "npc_ranchers", "name": "The Dewey Ranchers", "kind": "npc", "systemId": "sys_strainz",
+      "role": "Scared, armed, decent defenders", "portraitSeed": "dewey-ranchers", "threat": false,
+      "attrs": { "brawn": 11, "agility": 10, "wits": 9, "charm": 9 },
+      "tags": ["Act II", "Dewey", "faction"],
+      "statBlock": "~11 / 10 / 9 / 9 | VIT 17 | Comp 3 each",
+      "notes": "A handful of scared, capable people with deer rifles and a lot to protect. Defenders, not villains — people doing the math on every stranger at the door."
+    }
+  ]
+}

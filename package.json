@@ -1,0 +1,79 @@
+{
+  "name": "xrpg",
+  "productName": "XRPG",
+  "version": "1.2.0",
+  "description": "XRPG — a comprehensive tabletop RPG game-master console: campaigns, characters, rules, virtual tabletop, audio mixer, session recording and live Claude AI integration.",
+  "author": {
+    "name": "Xirma"
+  },
+  "copyright": "Copyright © Xirma. All rights reserved.",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:debug": "electron . --enable-logging",
+    "test:discord": "node scripts/test-discord-audio.js",
+    "dist": "electron-builder --publish never",
+    "publish": "electron-builder --publish always",
+    "pack": "electron-builder --dir"
+  },
+  "build": {
+    "appId": "com.xirma.xrpg",
+    "productName": "XRPG",
+    "copyright": "Copyright © Xirma. All rights reserved.",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "files": [
+      "electron/**/*",
+      "renderer/**/*",
+      "content/**/*",
+      "assets/**/*",
+      "!**/.dev/**"
+    ],
+    "directories": {
+      "output": "dist",
+      "buildResources": "assets"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "Xirma377",
+      "repo": "XRPG"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "forceCodeSigning": false
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "XRPG",
+      "uninstallDisplayName": "XRPG ${version}",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    }
+  },
+  "dependencies": {
+    "@discordjs/voice": "^0.19.2",
+    "discord.js": "^14.26.4",
+    "electron-updater": "^6.3.9",
+    "libsodium-wrappers": "^0.8.4",
+    "opusscript": "^0.0.8",
+    "prism-media": "^1.3.5"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  }
+}

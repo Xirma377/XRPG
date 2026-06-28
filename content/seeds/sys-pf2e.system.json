@@ -1,0 +1,384 @@
+{
+  "collection": "rulesets",
+  "docs": [
+    {
+      "id": "sys_pf2e",
+      "name": "Pathfinder",
+      "tagline": "d20 + modifier vs DC, four degrees of success",
+      "version": "2E Remaster (ORC License)",
+      "author": "Paizo Inc. — Pathfinder Second Edition Remaster, released under the ORC License",
+      "summary": "The Pathfinder Second Edition Remaster, built on a d20 roll-high engine with four degrees of success: beat the DC by 10 for a critical success, miss by 10 for a critical failure. Every turn gives you three actions plus a reaction, and a multiple attack penalty keeps the math tight. Attributes are stored here as classic ability scores (default 10) with modifier deriveds — floor((score-10)/2) — so the engine's roll math reads the modifiers directly. Content is the ORC-licensed Remaster ruleset.",
+      "theme": {
+        "accent": "#a31515",
+        "accent2": "#7a0f0f",
+        "cool": "#c8a24a",
+        "displayFont": "Spectral",
+        "titleFont": "Spectral",
+        "monoFont": "Share Tech Mono",
+        "mood": "heroic"
+      },
+      "dice": {
+        "notation": "1d20",
+        "resolution": "degrees",
+        "summary": "Roll 1d20 + modifier vs DC. Beat the DC by 10+ = critical success; meet/beat = success; miss by 10+ or fall short = failure/critical failure. Nat 20 bumps the result up one step, nat 1 bumps it down one.",
+        "crit": { "success": [20], "failure": [1] }
+      },
+      "attributes": [
+        { "key": "str", "name": "Strength", "abbr": "STR", "default": 10, "min": 1, "max": 24, "desc": "Melee attacks, Athletics, carrying, damage with heavy weapons." },
+        { "key": "dex", "name": "Dexterity", "abbr": "DEX", "default": 10, "min": 1, "max": 24, "desc": "Reflex saves, AC, ranged & finesse attacks, Acrobatics, Stealth, Thievery." },
+        { "key": "con", "name": "Constitution", "abbr": "CON", "default": 10, "min": 1, "max": 24, "desc": "Hit Points and Fortitude saves; resisting poison, disease, and fatigue." },
+        { "key": "int", "name": "Intelligence", "abbr": "INT", "default": 10, "min": 1, "max": 24, "desc": "Lore, Arcana, Crafting, Society, extra skills and languages." },
+        { "key": "wis", "name": "Wisdom", "abbr": "WIS", "default": 10, "min": 1, "max": 24, "desc": "Perception, Will saves, Medicine, Nature, Religion, Survival." },
+        { "key": "cha", "name": "Charisma", "abbr": "CHA", "default": 10, "min": 1, "max": 24, "desc": "Diplomacy, Deception, Intimidation, Performance, and many social effects." }
+      ],
+      "attributeRules": { "start": 10, "startMin": 8, "startMax": 18, "note": "In play, scores are built from background, ancestry, class, and four free boosts at level 1, capping at 18. Even scores give a clean modifier; a boost raises a score by 2 (or by 1 once it is 18+)." },
+      "deriveds": [
+        { "key": "str_mod", "name": "STR mod", "abbr": "STR", "formula": "floor((str-10)/2)", "desc": "Strength modifier." },
+        { "key": "dex_mod", "name": "DEX mod", "abbr": "DEX", "formula": "floor((dex-10)/2)", "desc": "Dexterity modifier." },
+        { "key": "con_mod", "name": "CON mod", "abbr": "CON", "formula": "floor((con-10)/2)", "desc": "Constitution modifier." },
+        { "key": "int_mod", "name": "INT mod", "abbr": "INT", "formula": "floor((int-10)/2)", "desc": "Intelligence modifier." },
+        { "key": "wis_mod", "name": "WIS mod", "abbr": "WIS", "formula": "floor((wis-10)/2)", "desc": "Wisdom modifier." },
+        { "key": "cha_mod", "name": "CHA mod", "abbr": "CHA", "formula": "floor((cha-10)/2)", "desc": "Charisma modifier." },
+        { "key": "ac", "name": "Armor Class", "abbr": "AC", "formula": "10 + dex_mod", "desc": "Unarmored AC. In play add your proficiency bonus and any armor item bonus (and cap Dex by the armor)." },
+        { "key": "hp", "name": "Hit Points", "abbr": "HP", "formula": "8 + con_mod", "min": 0, "resource": true, "desc": "Sample level-1 Hit Points (ancestry + class + Con). Track current HP here; you can also gain temporary HP." },
+        { "key": "perception", "name": "Perception", "abbr": "PER", "formula": "wis_mod", "desc": "Initiative and noticing things. Add your proficiency bonus in play." },
+        { "key": "fortitude", "name": "Fortitude", "abbr": "FORT", "formula": "con_mod", "desc": "Fortitude save vs poison, disease, and bodily effects. Add proficiency in play." },
+        { "key": "reflex", "name": "Reflex", "abbr": "REF", "formula": "dex_mod", "desc": "Reflex save vs area effects and dodging. Add proficiency in play." },
+        { "key": "will", "name": "Will", "abbr": "WILL", "formula": "wis_mod", "desc": "Will save vs mental and emotion effects. Add proficiency in play." },
+        { "key": "class_dc", "name": "Class DC", "abbr": "DC", "formula": "10 + max(str_mod,dex_mod,int_mod,wis_mod,cha_mod)", "desc": "Base Class DC from your key attribute. Add your proficiency bonus in play." }
+      ],
+      "dcLadder": [
+        { "name": "Untrained", "dc": 10 },
+        { "name": "Trained", "dc": 15 },
+        { "name": "Expert", "dc": 20 },
+        { "name": "Master", "dc": 30 },
+        { "name": "Legendary", "dc": 40 }
+      ],
+      "conditions": [
+        { "name": "Clumsy", "effect": "Take a status penalty equal to the condition value to Dexterity-based checks and DCs (attack rolls, AC, Reflex, Acrobatics, Thievery). Clumsy 1 = −1, etc." },
+        { "name": "Drained", "effect": "Status penalty equal to the value to Constitution-based checks (Fortitude saves) and you lose (value × level) Hit Points; your max HP is reduced by that amount while drained. Value decreases by 1 after a night's rest." },
+        { "name": "Dying", "effect": "Unconscious and near death. At Dying 4 you die. Each turn make a recovery check (flat DC 10 + dying value): success reduces Dying by 1, failure increases it. Gaining Dying while already Wounded adds the Wounded value." },
+        { "name": "Enfeebled", "effect": "Status penalty equal to the value to Strength-based checks and DCs, including melee damage and Athletics." },
+        { "name": "Fascinated", "effect": "−2 status penalty to Perception and skill checks, and you can't use concentrate actions unrelated to the fascinating subject." },
+        { "name": "Fatigued", "effect": "−1 status penalty to AC and saving throws. You can't use exploration activities while traveling. Recovered by a full night's rest." },
+        { "name": "Frightened", "effect": "Status penalty equal to the value to all checks and DCs. The value decreases by 1 at the end of each of your turns (faster to flee than to fight)." },
+        { "name": "Grabbed", "effect": "Immobilized and off-guard. If you attempt a manipulate action you must succeed at a flat DC 5 check or the action is lost." },
+        { "name": "Prone", "effect": "Off-guard, and you take a −2 circumstance penalty to attack rolls. You can Crawl or Stand. Ranged attackers beyond reach take a penalty against you." },
+        { "name": "Sickened", "effect": "Status penalty equal to the value to all checks and DCs. You can't willingly ingest anything. Spend an action to retch and attempt a Fortitude save to reduce the value." },
+        { "name": "Slowed", "effect": "Lose a number of actions equal to the condition value at the start of your turn (you choose which)." },
+        { "name": "Stunned", "effect": "Lose actions equal to the stunned value (or lose all actions for that many rounds if expressed in rounds). Stunned reduces Slowed values you'd otherwise apply that turn. Decreases by the actions lost." },
+        { "name": "Stupefied", "effect": "Status penalty equal to the value to Intelligence-, Wisdom-, and Charisma-based checks and DCs. To Cast a Spell you must succeed at a flat DC (5 + value) or lose the spell." },
+        { "name": "Wounded", "effect": "When you would become Dying, increase the Dying value by your Wounded value. Each time you lose the Dying condition, your Wounded value increases by 1. Removed by recovering all HP or successful Treat Wounds." },
+        { "name": "Off-Guard", "effect": "−2 circumstance penalty to AC against the triggering effects (commonly while flanked, prone, or surprised)." },
+        { "name": "Quickened", "effect": "Gain 1 additional action at the start of your turn each round (usable only for specific actions granted by the effect)." }
+      ],
+      "weapons": [
+        { "name": "Dagger", "damage": "1d4 P", "notes": "Agile, finesse, thrown 10 ft, versatile S. Light and concealable." },
+        { "name": "Shortsword", "damage": "1d6 P", "notes": "Agile, finesse, versatile S. A reliable sidearm." },
+        { "name": "Longsword", "damage": "1d8 S", "notes": "Versatile P. The classic martial blade." },
+        { "name": "Greatsword", "damage": "1d12 S", "notes": "Two-hand. Versatile P. Big swings, big damage." },
+        { "name": "Battle Axe", "damage": "1d8 S", "notes": "Sweep — +1 circumstance bonus to attack a creature you already attacked this turn." },
+        { "name": "Warhammer", "damage": "1d8 B", "notes": "Shove — you can Shove on a successful Strike." },
+        { "name": "Spear", "damage": "1d6 P", "notes": "Thrown 20 ft. Simple, cheap, and effective in formation." },
+        { "name": "Rapier", "damage": "1d6 P", "notes": "Deadly d8, disarm, finesse. Crits hit harder with extra damage dice." },
+        { "name": "Shortbow", "damage": "1d6 P", "notes": "Deadly d10, range 60 ft. Reload 0 — fire each action." },
+        { "name": "Longbow", "damage": "1d8 P", "notes": "Deadly d10, range 100 ft, volley 30 ft. Reload 0." },
+        { "name": "Crossbow", "damage": "1d8 P", "notes": "Range 120 ft, reload 1. Steady ranged power." },
+        { "name": "Sling", "damage": "1d6 B", "notes": "Propulsive, range 50 ft, reload 1. Cheap and quiet." },
+        { "name": "Unarmed Strike", "damage": "1d4 B", "notes": "Agile, finesse, nonlethal. Always available." }
+      ],
+      "bestiary": [
+        {
+          "name": "Goblin Warrior",
+          "meta": "Creature 1 · Small Goblin Humanoid",
+          "hp": 6,
+          "ac": 16,
+          "statblock": "**Goblin Warrior — Creature 1** (CE, Small, Goblin Humanoid)\n\n**Perception** +2; darkvision\n**Skills** Acrobatics +5, Athletics +2, Nature +1, Stealth +5\n**STR** +0, **DEX** +3, **CON** +1, **INT** +0, **WIS** +0, **CHA** +1\n**AC** 16; **Fort** +5, **Ref** +7, **Will** +3\n**HP** 6\n**Speed** 25 feet\n\n**Melee** dogslicer +7 (agile, backstabber, finesse), **Damage** 1d6 slashing\n**Ranged** shortbow +7 (deadly d10, range 60 ft.), **Damage** 1d6 piercing\n**Goblin Scuttle** [reaction] (Trigger an ally ends a move action adjacent to the goblin) The goblin Steps.",
+          "tags": ["humanoid", "goblin", "low-level", "minion"]
+        },
+        {
+          "name": "Kobold Warrior",
+          "meta": "Creature -1 · Small Dragon Humanoid",
+          "hp": 8,
+          "ac": 16,
+          "statblock": "**Kobold Warrior — Creature -1** (LE, Small, Dragon Humanoid Kobold)\n\n**Perception** +5; darkvision\n**Skills** Acrobatics +5, Crafting +2, Stealth +5, Thievery +5\n**STR** +0, **DEX** +4, **CON** +0, **INT** +0, **WIS** +1, **CHA** +0\n**AC** 16; **Fort** +2, **Ref** +7, **Will** +2\n**HP** 8\n**Speed** 25 feet\n\n**Melee** spear +7 (finesse), **Damage** 1d6 piercing\n**Ranged** sling +7 (propulsive, range 50 ft.), **Damage** 1d6 bludgeoning\n**Pack Attack** The kobold's Strikes deal 1d4 extra damage to creatures within reach of at least two of the kobold's allies.",
+          "tags": ["humanoid", "kobold", "dragon", "low-level", "trap-maker"]
+        },
+        {
+          "name": "Orc Warrior",
+          "meta": "Creature 1 · Medium Orc Humanoid",
+          "hp": 23,
+          "ac": 17,
+          "statblock": "**Orc Warrior — Creature 1** (CE, Medium, Orc Humanoid)\n\n**Perception** +5; darkvision\n**Skills** Athletics +7, Intimidation +4\n**STR** +4, **DEX** +2, **CON** +3, **INT** −1, **WIS** +1, **CHA** +0\n**AC** 17; **Fort** +8, **Ref** +5, **Will** +3\n**HP** 23\n**Speed** 25 feet\n\n**Melee** orc necksplitter +7 (forceful, sweep), **Damage** 1d8+4 slashing\n**Ranged** javelin +5 (thrown 30 ft.), **Damage** 1d6+4 piercing\n**Ferocity** [reaction] (Trigger the orc is reduced to 0 HP) The orc avoids being knocked out and remains at 1 HP, but its wounded value increases by 1.",
+          "tags": ["humanoid", "orc", "low-level", "brute"]
+        },
+        {
+          "name": "Skeleton Guard",
+          "meta": "Creature -1 · Medium Mindless Undead",
+          "hp": 4,
+          "ac": 16,
+          "statblock": "**Skeleton Guard — Creature -1** (NE, Medium, Mindless Skeleton Undead)\n\n**Perception** +2; darkvision\n**Skills** Acrobatics +6, Athletics +4\n**STR** +2, **DEX** +4, **CON** +0, **INT** −5, **WIS** +0, **CHA** +0\n**AC** 16; **Fort** +5, **Ref** +7, **Will** +1\n**HP** 4; **Immunities** death effects, disease, mental, paralyzed, poison, unconscious; **Resistances** cold 5, electricity 5, fire 5, piercing 5, slashing 5\n**Speed** 25 feet\n\n**Melee** scimitar +6 (forceful, sweep), **Damage** 1d6+2 slashing\n**Melee** claw +6 (agile), **Damage** 1d4+2 slashing",
+          "tags": ["undead", "skeleton", "mindless", "low-level"]
+        },
+        {
+          "name": "Zombie Shambler",
+          "meta": "Creature -1 · Medium Mindless Undead",
+          "hp": 20,
+          "ac": 12,
+          "statblock": "**Zombie Shambler — Creature -1** (NE, Medium, Mindless Zombie Undead)\n\n**Perception** +0; darkvision\n**Skills** Athletics +4\n**STR** +3, **DEX** −2, **CON** +4, **INT** −5, **WIS** +0, **CHA** −3\n**AC** 12; **Fort** +7, **Ref** +0, **Will** +3\n**HP** 20; **Immunities** death effects, disease, mental, paralyzed, poison, unconscious; **Weaknesses** positive 5, slashing 5\n**Speed** 25 feet\n\n**Slow** A zombie is permanently slowed 1 and can't use reactions.\n**Melee** fist +6 (Grab Trigger), **Damage** 1d6+3 bludgeoning plus Grab\n**Grab the Unwary** [reaction] (Trigger a creature within reach Strikes the zombie and fails) The zombie automatically grabs the triggering creature.",
+          "tags": ["undead", "zombie", "mindless", "slow", "low-level"]
+        },
+        {
+          "name": "Ghoul",
+          "meta": "Creature 1 · Medium Undead",
+          "hp": 24,
+          "ac": 16,
+          "statblock": "**Ghoul — Creature 1** (CE, Medium, Undead)\n\n**Perception** +7; darkvision\n**Skills** Acrobatics +7, Athletics +5, Stealth +7\n**STR** +3, **DEX** +4, **CON** +2, **INT** +0, **WIS** +2, **CHA** +0\n**AC** 16; **Fort** +6, **Ref** +10, **Will** +6\n**HP** 24; **Immunities** death effects, disease, paralyzed, poison, unconscious\n**Speed** 30 feet\n\n**Melee** jaws +9, **Damage** 1d8+3 piercing plus Ghoul Fever\n**Melee** claw +9 (agile), **Damage** 1d6+3 slashing plus paralysis\n**Paralysis** (DC 17 Fortitude; on failure, target is paralyzed 1 round; elves are immune)\n**Ghoul Fever** (DC 17 Fortitude; a wasting disease that can ultimately reanimate its victim).",
+          "tags": ["undead", "ghoul", "paralysis", "disease", "low-level"]
+        },
+        {
+          "name": "Giant Rat",
+          "meta": "Creature -1 · Small Animal",
+          "hp": 8,
+          "ac": 15,
+          "statblock": "**Giant Rat — Creature -1** (N, Small, Animal)\n\n**Perception** +5; low-light vision, scent (imprecise) 30 ft.\n**Skills** Acrobatics +5, Athletics +2, Stealth +5\n**STR** +0, **DEX** +4, **CON** +1, **INT** −5, **WIS** +1, **CHA** −4\n**AC** 15; **Fort** +4, **Ref** +7, **Will** +3\n**HP** 8\n**Speed** 30 feet, climb 10 feet\n\n**Melee** jaws +7 (finesse), **Damage** 1d4 piercing plus filth fever\n**Filth Fever** (DC 16 Fortitude; a disease spread by the rat's bite).",
+          "tags": ["animal", "vermin", "disease", "low-level", "swarm-filler"]
+        },
+        {
+          "name": "Wolf",
+          "meta": "Creature 1 · Medium Animal",
+          "hp": 24,
+          "ac": 15,
+          "statblock": "**Wolf — Creature 1** (N, Medium, Animal)\n\n**Perception** +7; low-light vision, scent (imprecise) 30 ft.\n**Skills** Acrobatics +5, Athletics +6, Stealth +7, Survival +5\n**STR** +4, **DEX** +2, **CON** +2, **INT** −4, **WIS** +2, **CHA** +0\n**AC** 15; **Fort** +7, **Ref** +7, **Will** +5\n**HP** 24\n**Speed** 35 feet\n\n**Melee** jaws +9 (Knockdown), **Damage** 1d8+2 piercing\n**Pack Attack** The wolf's Strikes deal 1d4 extra damage to creatures within reach of at least two of the wolf's allies.\n**Knockdown** (Once per round, on a hit the wolf can attempt to Trip the target as a free action.)",
+          "tags": ["animal", "beast", "pack", "low-level"]
+        },
+        {
+          "name": "Bugbear Tormentor",
+          "meta": "Creature 2 · Medium Goblin Humanoid",
+          "hp": 32,
+          "ac": 18,
+          "statblock": "**Bugbear Tormentor — Creature 2** (CE, Medium, Goblin Humanoid)\n\n**Perception** +8; darkvision\n**Skills** Athletics +8, Intimidation +6, Stealth +8, Thievery +8\n**STR** +4, **DEX** +3, **CON** +2, **INT** +0, **WIS** +1, **CHA** +1\n**AC** 18; **Fort** +6, **Ref** +9, **Will** +6\n**HP** 32\n**Speed** 25 feet\n\n**Melee** morningstar +11 (versatile P), **Damage** 1d8+6 bludgeoning\n**Ranged** javelin +10 (thrown 30 ft.), **Damage** 1d6+6 piercing\n**Snatch and Run** When the bugbear succeeds at a Grapple, it can Stride, carrying the grabbed creature with it.",
+          "tags": ["humanoid", "goblin", "bugbear", "ambusher", "low-level"]
+        },
+        {
+          "name": "Hobgoblin Soldier",
+          "meta": "Creature 1 · Medium Goblin Humanoid",
+          "hp": 24,
+          "ac": 18,
+          "statblock": "**Hobgoblin Soldier — Creature 1** (LE, Medium, Goblin Humanoid)\n\n**Perception** +5; darkvision\n**Skills** Athletics +6, Society +2, Warfare Lore +4\n**STR** +3, **DEX** +2, **CON** +3, **INT** +0, **WIS** +1, **CHA** +0\n**AC** 18; **Fort** +8, **Ref** +5, **Will** +3\n**HP** 24\n**Speed** 25 feet\n\n**Melee** glaive +8 (deadly d8, forceful, reach 10 ft.), **Damage** 1d8+3 slashing\n**Ranged** composite shortbow +7 (deadly d10, range 60 ft.), **Damage** 1d6+3 piercing\n**Formation** When the hobgoblin has a shield raised, allies adjacent to it gain a +1 circumstance bonus to AC.",
+          "tags": ["humanoid", "goblin", "hobgoblin", "soldier", "low-level"]
+        },
+        {
+          "name": "Ogre Warrior",
+          "meta": "Creature 3 · Large Giant Humanoid",
+          "hp": 50,
+          "ac": 17,
+          "statblock": "**Ogre Warrior — Creature 3** (CE, Large, Giant Humanoid)\n\n**Perception** +5 (low-light vision)\n**Skills** Athletics +11, Intimidation +5\n**STR** +5, **DEX** +0, **CON** +4, **INT** −2, **WIS** +0, **CHA** −1\n**AC** 17; **Fort** +11, **Ref** +5, **Will** +6\n**HP** 50\n**Speed** 25 feet\n\n**Melee** ogre hook +11 (deadly d10, reach 10 ft., trip), **Damage** 1d10+7 piercing\n**Ranged** javelin +6 (thrown 30 ft.), **Damage** 1d6+7 piercing\n**Reactive Strike** [reaction] (Trigger a creature within reach uses a manipulate or move action) The ogre makes a melee Strike against the triggering creature.",
+          "tags": ["humanoid", "giant", "ogre", "brute", "reach"]
+        },
+        {
+          "name": "Troll",
+          "meta": "Creature 5 · Large Giant Humanoid",
+          "hp": 115,
+          "ac": 22,
+          "statblock": "**Troll — Creature 5** (CE, Large, Giant Humanoid Troll)\n\n**Perception** +11; darkvision, scent (imprecise) 30 ft.\n**Skills** Athletics +15, Intimidation +9\n**STR** +6, **DEX** +2, **CON** +6, **INT** −2, **WIS** +1, **CHA** +0\n**AC** 22; **Fort** +16, **Ref** +10, **Will** +9\n**HP** 115, regeneration 20 (deactivated by acid or fire); **Weaknesses** acid 5, fire 5\n**Speed** 30 feet\n\n**Melee** jaws +15, **Damage** 2d8+6 piercing\n**Melee** claw +15 (agile), **Damage** 2d6+6 slashing plus Grab\n**Regeneration** As long as the troll has regeneration, downing it doesn't kill it — it rises again unless you damage it with acid or fire.",
+          "tags": ["giant", "troll", "regeneration", "mid-level", "boss"]
+        },
+        {
+          "name": "Owlbear",
+          "meta": "Creature 4 · Large Animal",
+          "hp": 70,
+          "ac": 21,
+          "statblock": "**Owlbear — Creature 4** (N, Large, Animal)\n\n**Perception** +12; darkvision, scent (imprecise) 30 ft.\n**Skills** Acrobatics +8, Athletics +13, Intimidation +10, Stealth +10\n**STR** +5, **DEX** +2, **CON** +4, **INT** −4, **WIS** +3, **CHA** +0\n**AC** 21; **Fort** +13, **Ref** +9, **Will** +12\n**HP** 70\n**Speed** 25 feet\n\n**Melee** beak +13, **Damage** 2d8+6 piercing\n**Melee** claw +13 (agile), **Damage** 2d6+6 slashing plus Grab\n**Screech** [one-action] (auditory, emotion, fear) Each enemy within 30 feet must succeed at a DC 21 Will save or be frightened 1 (frightened 2 on a critical failure).",
+          "tags": ["animal", "owlbear", "beast", "mid-level"]
+        },
+        {
+          "name": "Animated Armor",
+          "meta": "Creature 2 · Medium Construct",
+          "hp": 30,
+          "ac": 21,
+          "statblock": "**Animated Armor — Creature 2** (N, Medium, Construct Mindless)\n\n**Perception** +5; darkvision\n**Skills** Athletics +9\n**STR** +4, **DEX** +0, **CON** +4, **INT** −5, **WIS** +0, **CHA** −5\n**AC** 21; **Fort** +10, **Ref** +4, **Will** +4\n**HP** 30, **Hardness** 4; **Immunities** bleed, death effects, disease, doomed, drained, fatigued, mental, paralyzed, poison, sickened, unconscious\n**Speed** 20 feet\n\n**Melee** armored fist +11, **Damage** 1d8+4 bludgeoning\n**Death Throes** When destroyed, the armor collapses into a heap, no longer animated.",
+          "tags": ["construct", "mindless", "guardian", "low-level"]
+        },
+        {
+          "name": "Ghost (Commoner)",
+          "meta": "Creature 4 · Medium Incorporeal Undead",
+          "hp": 50,
+          "ac": 21,
+          "statblock": "**Ghost Commoner — Creature 4** (NE, Medium, Incorporeal Undead Spirit)\n\n**Perception** +12; darkvision\n**Skills** Intimidation +12, Stealth +12\n**STR** −5, **DEX** +4, **CON** +0, **INT** +0, **WIS** +3, **CHA** +5\n**AC** 21; **Fort** +9, **Ref** +13, **Will** +12\n**HP** 50; **Immunities** bleed, death effects, disease, paralyzed, poison, precision, unconscious; all physical attacks (except force or ghost touch); **Resistances** all damage 5 (except force, ghost touch, or positive)\n**Speed** fly 25 feet\n\n**Melee** spectral hand +13 (magical), **Damage** 2d6+4 negative\n**Frightful Moan** [one-action] (auditory, emotion, fear) Each living creature within 30 feet must attempt a DC 21 Will save or be frightened (frightened 2 on a failure, frightened 3 and fleeing on a critical failure).",
+          "tags": ["undead", "ghost", "incorporeal", "haunt", "mid-level"]
+        },
+        {
+          "name": "Vampire Spawn",
+          "meta": "Creature 4 · Medium Undead",
+          "hp": 50,
+          "ac": 21,
+          "statblock": "**Vampire Spawn — Creature 4** (CE, Medium, Undead)\n\n**Perception** +10; darkvision\n**Skills** Acrobatics +10, Athletics +12, Intimidation +9, Stealth +12\n**STR** +4, **DEX** +4, **CON** +3, **INT** +0, **WIS** +2, **CHA** +2\n**AC** 21; **Fort** +9, **Ref** +12, **Will** +10\n**HP** 50; **Immunities** death effects, disease, paralyzed, poison, unconscious; **Weaknesses** vampire weaknesses (sunlight, running water)\n**Speed** 25 feet, climb 25 feet\n\n**Melee** fangs +12, **Damage** 2d6+4 piercing plus drink blood\n**Drink Blood** When the spawn damages a living creature with its fangs and that creature is grabbed, restrained, or unconscious, the spawn restores 5 HP and the target becomes drained 1.\n**Swift Climber** The spawn can move at full Speed while Climbing.",
+          "tags": ["undead", "vampire", "blood", "climber", "mid-level"]
+        },
+        {
+          "name": "Young Red Dragon",
+          "meta": "Creature 10 · Large Dragon",
+          "hp": 175,
+          "ac": 30,
+          "statblock": "**Young Red Dragon — Creature 10** (CE, Large, Dragon Fire)\n\n**Perception** +19; darkvision, scent (imprecise) 60 ft.\n**Skills** Acrobatics +18, Athletics +22, Deception +18, Intimidation +20\n**STR** +7, **DEX** +3, **CON** +6, **INT** +2, **WIS** +4, **CHA** +5\n**AC** 30; **Fort** +21, **Ref** +18, **Will** +19\n**HP** 175; **Immunities** fire, paralyzed, sleep; **Weaknesses** cold 5\n**Speed** 40 feet, fly 100 feet\n\n**Melee** jaws +22 (fire, reach 10 ft.), **Damage** 2d10+10 piercing plus 1d6 fire\n**Melee** claw +22 (agile, reach 10 ft.), **Damage** 2d8+10 slashing\n**Breath Weapon** [two-actions] (evocation, fire) The dragon exhales a 30-foot cone of fire dealing 11d6 fire damage (DC 27 basic Reflex). It can't use Breath Weapon again for 1d4 rounds.\n**Frightful Presence** (aura, emotion, fear) DC 27 Will save or become frightened.",
+          "tags": ["dragon", "fire", "flier", "boss", "high-level"]
+        }
+      ],
+      "tables": [
+        {
+          "id": "crit-hit-flavor",
+          "name": "Critical Hit Flavor (d6)",
+          "die": "d6",
+          "entries": [
+            "A spray of blood — the foe is staggered back a step.",
+            "You find the gap in the armor; the strike rings true.",
+            "A glancing blow turns brutal as the weapon bites deep.",
+            "The foe stumbles, briefly off-guard to your allies.",
+            "A textbook strike — describe it like a duelist's finishing move.",
+            "Bone cracks audibly; nearby enemies flinch."
+          ]
+        },
+        {
+          "id": "fumble-flavor",
+          "name": "Fumble / Critical Failure Flavor (d6)",
+          "die": "d6",
+          "entries": [
+            "Your footing slips on loose ground.",
+            "Your weapon catches on the terrain, leaving you exposed.",
+            "You overcommit and the foe sees the next blow coming.",
+            "A misjudged distance — the swing whistles through empty air.",
+            "Your grip falters; the weapon nearly leaves your hand.",
+            "An ally's shout distracts you at the worst moment."
+          ]
+        },
+        {
+          "id": "treasure-trinket",
+          "name": "Minor Trinket (d8)",
+          "die": "d8",
+          "entries": [
+            "A tarnished silver locket holding a faded portrait.",
+            "A set of bone dice that feel oddly warm.",
+            "A waterproof map case with a half-burned chart.",
+            "A vial of cloudy liquid, label long gone.",
+            "A signet ring bearing an unfamiliar heraldry.",
+            "A small whetstone humming with faint magic.",
+            "A pouch of dried herbs that smell of distant forests.",
+            "A cracked holy symbol of a forgotten deity."
+          ]
+        }
+      ],
+      "reference": [
+        {
+          "id": "pf2e-check",
+          "title": "The Check & Degrees of Success",
+          "category": "Core Rules",
+          "tags": ["d20", "check", "dc", "degrees"],
+          "body": "When an outcome is uncertain, roll **1d20** and add the relevant **modifier** (ability modifier + proficiency bonus + any other bonuses or penalties), then compare to the **Difficulty Class (DC)**.\n\nEvery check has **four degrees of success**:\n\n| Result | Outcome |\n|---|---|\n| Total ≥ **DC + 10** | **Critical Success** |\n| Total ≥ **DC** | **Success** |\n| Total ≤ **DC − 1** | **Failure** |\n| Total ≤ **DC − 10** | **Critical Failure** |\n\nA check that doesn't list a critical effect simply treats a critical success as a success (and a critical failure as a failure) unless the rules say otherwise.\n\n**Bonus and penalty types** never stack with the same type — keep only the highest of each: **circumstance**, **status**, and **item**. Untyped penalties always stack." },
+        {
+          "id": "pf2e-natdice",
+          "title": "Natural 20s & Natural 1s",
+          "category": "Core Rules",
+          "tags": ["crit", "nat20", "nat1", "step"],
+          "body": "The number on the die shifts your degree of success by **one step**, in addition to the math:\n\n- **Natural 20** — improve the result by **one degree** (failure → success, success → critical success).\n- **Natural 1** — worsen the result by **one degree** (success → failure, failure → critical failure).\n\nThis is why a low-level hero can occasionally crit a tough foe, and why even an expert can fumble. A natural 20 that was *already* a critical success stays a critical success; a natural 1 on what was already a critical failure stays one." },
+        {
+          "id": "pf2e-three-actions",
+          "title": "The Three-Action Economy",
+          "category": "Combat",
+          "tags": ["actions", "turn", "reaction", "free"],
+          "body": "On your turn you get **3 actions** and **1 reaction**, plus any number of **free actions**.\n\n- **Actions** [▪] — most things cost one action: Stride, Strike, Raise a Shield, Interact, Step, a one-action spell. Some activities cost **2** [▪▪] or **3** [▪▪▪] actions.\n- **Reaction** [↻] — used on someone else's turn (or yours) when its trigger occurs; you get one per round. Example: **Reactive Strike** (formerly Attack of Opportunity) when a foe leaves your reach or makes a manipulate action.\n- **Free Action** [⟡] — costs nothing, but most have a trigger and you can use each only when triggered.\n\nUnspent actions are lost at the end of your turn. The flexibility — move-move-strike, strike-strike-strike, cast-and-reposition — is the heart of PF2e tactics." },
+        {
+          "id": "pf2e-attacks-map",
+          "title": "Attack Rolls & the Multiple Attack Penalty",
+          "category": "Combat",
+          "tags": ["attack", "map", "strike"],
+          "body": "An attack roll is a check: **1d20 + attack modifier vs. the target's AC**, using the four degrees of success. On a melee or ranged weapon, a **critical success doubles the damage** (roll and add, then double the total, including weapon dice).\n\n**Multiple Attack Penalty (MAP):** each additional attack you make **on the same turn** takes a cumulative penalty:\n\n| Attack this turn | Penalty |\n|---|---|\n| 1st | +0 |\n| 2nd | −5 (−4 with an **agile** weapon) |\n| 3rd+ | −10 (−8 with an **agile** weapon) |\n\nMAP resets at the start of your next turn. This is why a third Strike is often a trap — moving, Raising a Shield, or Demoralizing is frequently a better third action." },
+        {
+          "id": "pf2e-ac-saves",
+          "title": "AC & Saving Throws",
+          "category": "Combat",
+          "tags": ["ac", "saves", "fortitude", "reflex", "will"],
+          "body": "**Armor Class** = 10 + Dexterity modifier (capped by your armor) + proficiency bonus + armor's item bonus + other modifiers. Attackers roll against it.\n\n**Saving throws** defend against effects, each tied to an attribute:\n\n| Save | Attribute | Defends against |\n|---|---|---|\n| **Fortitude** | Constitution | Poison, disease, bodily effects |\n| **Reflex** | Dexterity | Area effects, traps, dodging |\n| **Will** | Wisdom | Mental, emotion, fear effects |\n\nMany effects call for a **basic save**: critical success = no damage, success = half, failure = full, critical failure = double. A save's DC is usually **10 + the effect's modifiers** (for a spell, the caster's spell DC)." },
+        {
+          "id": "pf2e-proficiency",
+          "title": "Proficiency & Level-Based DCs",
+          "category": "Core Rules",
+          "tags": ["proficiency", "dc", "level", "ranks"],
+          "body": "Proficiency has five ranks; your **proficiency bonus = your level + the rank bonus** (you only add it if you're at least Trained):\n\n| Rank | Bonus |\n|---|---|\n| Untrained | +0 |\n| Trained | level + 2 |\n| Expert | level + 4 |\n| Master | level + 6 |\n| Legendary | level + 8 |\n\nThe GM most often sets a DC from a **simple table** (Untrained 10, Trained 15, Expert 20, Master 30, Legendary 40) or by **level**. A rough level-based DC: **14 at level 0, rising about +1.5 per level** (e.g. ~19 at level 3, ~24 at level 7). Adjust by ±2/±5/±10 for incredibly easy or hard tasks." },
+        {
+          "id": "pf2e-conditions",
+          "title": "Conditions Overview",
+          "category": "Rules",
+          "tags": ["conditions", "status", "values"],
+          "body": "Many conditions carry a **value** (e.g. frightened 2) that is the size of the penalty or the number of rounds, and which often **counts down on its own**.\n\n- **Off-Guard** — −2 circumstance to AC (flanked, prone, surprised). The most common combat condition.\n- **Frightened N** — −N to all checks/DCs; **drops by 1 each turn**.\n- **Slowed N / Stunned N** — lose N actions; stunned reduces an equal amount of slowed.\n- **Clumsy / Enfeebled / Drained / Stupefied** — −N status penalty to the matching attribute's rolls.\n- **Wounded / Dying / Doomed** — the dying track (see *Death & Dying*).\n- **Grabbed / Restrained / Immobilized / Prone** — movement and action restrictions.\n\nWhen two instances of the same condition apply, **use the highest value** rather than adding them." },
+        {
+          "id": "pf2e-dying",
+          "title": "Death, Dying & Recovery",
+          "category": "Combat",
+          "tags": ["dying", "wounded", "death", "hero point"],
+          "body": "When you drop to **0 Hit Points**, you fall unconscious and gain the **Dying 1** condition (Dying 2 if the blow was a critical hit, or if you were already Wounded, add your Wounded value).\n\n- At the start of each of your turns while dying, attempt a **recovery check**: flat check vs. **DC 10 + your dying value**. **Success** reduces Dying by 1; **critical success** by 2; **failure** increases it by 1; **critical failure** by 2.\n- **Dying 4 = dead.** So is taking damage while at max Dying.\n- Healing to 1+ HP removes Dying but leaves you **Wounded** (raise Wounded by 1 each time you recover from dying). Wounded makes the next knockdown worse.\n- You can spend a **Hero Point** to avoid death entirely (see *Hero Points*)." },
+        {
+          "id": "pf2e-damage-healing",
+          "title": "Damage, Hit Points & Healing",
+          "category": "Combat",
+          "tags": ["damage", "hp", "healing", "temporary"],
+          "body": "Damage is subtracted from current **Hit Points**. At 0 HP you're knocked out and start **Dying** (excess damage doesn't carry over, but extra-large hits can push your starting dying value).\n\n- **Resistance N** reduces incoming damage of a type by N; **Weakness N** increases it by N; **Hardness N** (objects, some constructs) reduces every instance before it applies.\n- **Persistent damage** (e.g. *2 persistent fire*) is dealt at the end of each turn until you succeed at a **flat DC 15** check or it's removed.\n- **Temporary Hit Points** are a separate buffer, lost first and not stacked (keep the larger).\n- **Healing:** magic, potions, and **Treat Wounds** restore HP; you can't exceed your maximum." },
+        {
+          "id": "pf2e-resting-treat-wounds",
+          "title": "Resting & Treat Wounds",
+          "category": "Rules",
+          "tags": ["rest", "treat wounds", "medicine", "recovery"],
+          "body": "**A full night's rest (8 hours)** restores Hit Points equal to your **Constitution modifier × your level** (minimum your level), removes **Fatigued**, and reduces **Drained** and **Doomed** values by 1. You need food, water, and relative safety.\n\n**Treat Wounds** (Medicine, exploration, 10 minutes) heals a willing creature and removes the **Wounded** condition:\n\n| Proficiency / DC | Healing on success |\n|---|---|\n| Trained (DC 15) | 2d8 |\n| Expert (DC 20) | 2d8 + 10 |\n| Master (DC 30) | 2d8 + 30 |\n| Legendary (DC 40) | 2d8 + 50 |\n\nCritical success heals more; **critical failure deals 2d8 damage**. After being treated, a creature is **immune to Treat Wounds for 1 hour** (or 10 minutes for the whole party with the right options). You may lower the DC by 2 or 5 to cap or reduce the healing risk." },
+        {
+          "id": "pf2e-recall-knowledge",
+          "title": "Recall Knowledge",
+          "category": "Rules",
+          "tags": ["recall knowledge", "skills", "lore"],
+          "body": "**Recall Knowledge** is a single action (a **secret check** the GM may roll for you) using the appropriate skill to remember a useful fact:\n\n| Subject | Skill |\n|---|---|\n| Creatures | Nature, Arcana, Religion, Occultism, Society (by trait) |\n| History, settlements | Society |\n| Magic & traditions | Arcana, Occultism |\n| The planes, religion | Religion |\n| Local & specialized | the relevant **Lore** |\n\nThe DC scales with the target's level or rarity (rarer = harder). **Success** gives one accurate piece of information; **critical success** gives extra detail; **critical failure** gives a wrong belief. Many GMs allow a single Recall Knowledge attempt per subject unless something changes — repeated identical checks are discouraged." },
+        {
+          "id": "pf2e-hero-points",
+          "title": "Hero Points",
+          "category": "Core Rules",
+          "tags": ["hero points", "reroll", "luck"],
+          "body": "Hero Points are a meta-currency awarded by the GM. You typically begin each session with **1**, and earn more for heroics and good play (usually 1 or so per hour). They reset at the end of the session — spend them.\n\nTwo uses:\n\n1. **Reroll** — spend **1 Hero Point** to reroll a check you just made; you must take the **second result** even if it's worse.\n2. **Avoid Death** — spend **all** your Hero Points (at least 1) when you'd die to instead be knocked out at 0 HP, dying 0, and stable — a last-gasp escape from death.\n\nHero Points reward bold, story-forward play; the GM should hand them out generously for exactly that." },
+        {
+          "id": "pf2e-character-basics",
+          "title": "Character Basics — the ABCs",
+          "category": "Characters",
+          "tags": ["creation", "ancestry", "background", "class", "boosts"],
+          "body": "A PF2e character is built from four pillars plus attribute boosts:\n\n1. **Ancestry** — your people (human, elf, dwarf, goblin, orc…): Hit Points, Speed, size, attribute boosts/flaw, and ancestry feats.\n2. **Background** — what you did before adventuring: two attribute boosts, a skill, a Lore, and a skill feat.\n3. **Class** — your role (fighter, wizard, cleric, rogue…): key attribute, more HP, proficiencies, and your class features.\n4. **Attribute Boosts** — start scores at **10**, apply boosts from ancestry/background/class plus **four free boosts**; a boost raises a score by **+2** (by **+1** once a score is 18+). A **flaw** lowers a score by 2.\n\n**Even scores matter:** the modifier is **floor((score − 10) / 2)**, so 10→+0, 12→+1, 14→+2, 16→+3, 18→+4. Level 1 characters cap any single attribute at **+4 (18)**." },
+        {
+          "id": "pf2e-exploration-downtime",
+          "title": "Exploration & Downtime",
+          "category": "Rules",
+          "tags": ["exploration", "downtime", "modes", "activities"],
+          "body": "Play runs in three **modes**, each with its own pace:\n\n- **Encounter mode** — turn-by-turn, the three-action economy, initiative. Used for combat and tense scenes.\n- **Exploration mode** — minute-by-minute travel. Pick one **exploration activity** to sustain: **Search**, **Scout**, **Avoid Notice**, **Defend** (shield ready), **Investigate**, or simply **Hustle**. Your choice shapes what you notice and how ready you are when a fight starts.\n- **Downtime mode** — days or weeks between adventures: **Earn Income**, **Craft**, **Retrain**, recover, and build relationships.\n\nInitiative is usually a **Perception** check, but the GM can call for whatever skill fits how the scene begins (Stealth if you're sneaking, Deception if you're bluffing your way in)." },
+        {
+          "id": "pf2e-skills",
+          "title": "Skills & Common Skill Actions",
+          "category": "Rules",
+          "tags": ["skills", "actions", "athletics", "social"],
+          "body": "Skills are tied to attributes and used through defined **skill actions**, many of which can be done in combat:\n\n| Action | Skill | Effect |\n|---|---|---|\n| **Trip / Grapple / Shove / Disarm** | Athletics | vs. the target's Fortitude or Reflex DC |\n| **Tumble Through** | Acrobatics | move through a foe's space (vs. Reflex DC) |\n| **Hide / Sneak** | Stealth | become hidden or undetected |\n| **Demoralize** | Intimidation | make a foe **frightened 1** (vs. Will DC) |\n| **Feint** | Deception | make a foe **off-guard** to your next attack |\n| **Create a Diversion** | Deception | become hidden via a trick |\n| **Treat Wounds / Administer First Aid** | Medicine | heal or stabilize |\n\nMost combat skill actions use the target's relevant **DC** (10 + their save modifier) and follow the four degrees of success — a critical success on a Trip, for instance, also deals damage." }
+      ],
+      "rollPresets": [
+        { "name": "Skill check", "attr": "class_dc", "ease": "Trained", "note": "Use the relevant skill modifier; set DC by the ladder or by level." },
+        { "name": "Perception / Initiative", "attr": "perception", "ease": "Trained", "note": "Notice danger; usually rolled for initiative." },
+        { "name": "Strike (melee)", "attr": "str_mod", "note": "1d20 + attack mod vs AC. Apply MAP on later attacks this turn." },
+        { "name": "Strike (ranged/finesse)", "attr": "dex_mod", "note": "1d20 + attack mod vs AC. Apply MAP and any range penalties." },
+        { "name": "Fortitude save", "attr": "fortitude", "ease": "Trained", "note": "vs poison, disease, bodily effects. Often a basic save." },
+        { "name": "Reflex save", "attr": "reflex", "ease": "Trained", "note": "vs area effects and traps. Often a basic save." },
+        { "name": "Will save", "attr": "will", "ease": "Trained", "note": "vs mental, emotion, and fear effects." },
+        { "name": "Athletics (Trip/Grapple/Shove)", "attr": "str_mod", "ease": "Trained", "note": "vs the target's Fortitude or Reflex DC." },
+        { "name": "Acrobatics", "attr": "dex_mod", "ease": "Trained", "note": "Balance, Tumble Through, Maneuver in Flight." },
+        { "name": "Stealth (Hide/Sneak)", "attr": "dex_mod", "ease": "Trained", "note": "vs observers' Perception DC." },
+        { "name": "Recall Knowledge", "attr": "int_mod", "ease": "Trained", "note": "Secret check; pick the skill by the subject. DC scales with level/rarity." },
+        { "name": "Diplomacy / Deception / Intimidation", "attr": "cha_mod", "ease": "Trained", "note": "Social actions; Demoralize and Feint apply conditions." },
+        { "name": "Medicine (Treat Wounds)", "attr": "wis_mod", "ease": "Trained", "note": "DC 15 base; higher proficiency heals more. Crit fail deals 2d8." },
+        { "name": "Flat check", "attr": "str_mod", "note": "No modifier added — roll vs a flat DC (e.g. DC 11 concealed, DC 15 persistent damage)." }
+      ],
+      "rewardStat": { "key": "xp", "name": "Experience", "perSession": "1000 = level up" },
+      "npcStatFormat": "STR / DEX / CON / INT / WIS / CHA | AC | HP | Fort / Ref / Will",
+      "_seed": true
+    }
+  ]
+}
