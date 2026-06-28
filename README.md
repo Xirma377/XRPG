@@ -16,11 +16,18 @@ electron . --test    # renderer test harness (kept green)
 ## Build & release
 
 ```bash
-npm run dist     # Windows NSIS installer → dist/XRPG-Setup-<version>.exe (+ latest.yml for auto-update)
-npm run publish  # build and publish a release to GitHub (needs GH_TOKEN)
+npm run dist          # local Windows NSIS installer → dist/XRPG-Setup-<version>.exe (no publish)
+npm run release:patch # bump patch version, tag, push → CI builds & publishes the release
 ```
 
-The packaged app auto-updates from the GitHub release feed (`build.publish` in `package.json`).
+**Automated releases:** pushing a `v*` tag (what `release:patch`/`minor`/`major` do) triggers
+[`.github/workflows/release.yml`](.github/workflows/release.yml), which builds the installer on a
+Windows runner and publishes it — plus `latest.yml` — to a GitHub Release using the auto-provided
+`GITHUB_TOKEN` (no personal token to manage). You can also trigger it from the Actions tab.
+
+The packaged app auto-updates by reading `latest.yml` from the public repo's Releases
+(`build.publish` → GitHub `Xirma377/XRPG` in `package.json`). Releases are published immediately
+(`releaseType: "release"`) so clients see them right away.
 
 ## Features at a glance
 

@@ -36,7 +36,7 @@ XRPG/
 ### Commands
 - **Run the app:** `npm start` (Electron). First run seeds STRAIN Z + demo systems.
 - **Build installer:** `npm run dist` (electron-builder → Windows NSIS → `dist/XRPG-Setup-<version>.exe`). Unsigned (no code-signing cert configured; `win.forceCodeSigning:false`). Also emits `latest.yml` + `.blockmap` for auto-update.
-- **Publish a release:** bump `version` in `package.json`, then `npm run publish` (electron-builder `--publish always`) with a `GH_TOKEN` env var to push the installer + `latest.yml` to the GitHub release. Clients then auto-update.
+- **Publish a release (automated):** `npm run release:patch` (or `:minor`/`:major`) bumps the version, tags `vX.Y.Z`, and pushes — which triggers `.github/workflows/release.yml` on a Windows runner to build + publish the installer + `latest.yml` to a GitHub Release via the auto-provided `GITHUB_TOKEN` (no PAT). Can also be run from the Actions tab. Local-only build: `npm run dist`. Manual publish from a dev box: `npm run publish` with a `GH_TOKEN`. `releaseType:"release"` means releases go live immediately so clients see them.
 - **Auto-update:** `electron-updater` (`electron/updater.js`); feed is `build.publish` in package.json (GitHub `Xirma377/XRPG`) or a custom URL via Settings → Updates (`settings.updateFeedUrl`, generic provider). Only runs in the **packaged** app. About dialog (click the sidebar logo) + Settings → Updates expose check/install. Copyright **© Xirma. All rights reserved.** (`license: UNLICENSED`, `private: true`).
 - **Dev/test flags** (each captures/runs then quits):
   - `electron . --test` → runs `renderer/test.js` harness, writes `.dev/test-results.json`. **Keep this green.**

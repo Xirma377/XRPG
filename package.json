@@ -16,6 +16,9 @@
     "test:discord": "node scripts/test-discord-audio.js",
     "dist": "electron-builder --publish never",
     "publish": "electron-builder --publish always",
+    "release:patch": "npm version patch -m \"release v%s\" && git push --follow-tags",
+    "release:minor": "npm version minor -m \"release v%s\" && git push --follow-tags",
+    "release:major": "npm version major -m \"release v%s\" && git push --follow-tags",
     "pack": "electron-builder --dir"
   },
   "build": {
@@ -37,7 +40,8 @@
     "publish": {
       "provider": "github",
       "owner": "Xirma377",
-      "repo": "XRPG"
+      "repo": "XRPG",
+      "releaseType": "release"
     },
     "win": {
       "target": [

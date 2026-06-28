@@ -217,14 +217,17 @@ function registerIpc({ ipcMain, store, ai, transcribe, updater, discord, getWind
   handle('update:install', () => { if (updater) updater.quitAndInstall(); return true; });
 
   // Test harness: write results to disk and quit (used by `electron . --test`).
+  // Exits non-zero on any failure so CI can gate on it.
   ipcMain.handle('test:report', async (_evt, results) => {
+    let failed = 1;
     try {
       const dir = path.join(__dirname, '..', '.dev');
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(path.join(dir, 'test-results.json'), JSON.stringify(results, null, 2));
+      failed = Number(results && results.failed) || 0;
       console.log(`[test] ${results.passed}/${results.total} passed`);
     } catch (e) { console.error('[test] write failed', e); }
-    setTimeout(() => app.quit(), 200);
+    setTimeout(() => app.exit(failed > 0 ? 1 : 0), 200);
     return { ok: true };
   });
   handle('clipboard:write', async (text) => {
