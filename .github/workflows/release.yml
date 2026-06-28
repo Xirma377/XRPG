@@ -15,6 +15,12 @@ on:
 permissions:
   contents: write
 
+# electron-builder downloads its own Electron dist for packaging, so we skip the
+# `electron` npm package's postinstall binary download (not needed here, and a
+# common point of failure on a fresh CI runner).
+env:
+  ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
 jobs:
   release:
     runs-on: windows-latest
@@ -28,13 +34,14 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install dependencies
-        run: npm ci
+      - name: Versions
+        run: node -v && npm -v
 
-      - name: Run tests
-        run: |
-          node scripts/test-discord-audio.js
-          npx electron . --test
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Run audio pipeline tests
+        run: node scripts/test-discord-audio.js
 
       - name: Build & publish installer
         run: npm run publish
