@@ -117,10 +117,18 @@ export function buildReferenceIndex(system) {
     items.push({ id: 'table-' + (t.id || t.name), title: t.name, category: 'Tables', tags: ['table'], body, type: 'table', table: t });
   }
   for (const w of system.weapons || []) {
-    items.push({ id: 'weapon-' + (w.name), title: w.name, category: 'Weapons', tags: ['weapon', 'damage'], body: `${w.damage || ''} — ${w.notes || ''}`, type: 'weapon' });
+    const meta = [w.damage && ('**' + w.damage + '**'), w.range, w.hands != null && (w.hands + 'h'), w.props].filter(Boolean).join(' · ');
+    const body = meta + (w.notes ? '\n\n' + w.notes : '');
+    items.push({ id: 'weapon-' + (w.name), title: w.name, category: 'Weapons', tags: ['weapon', 'damage', w.props || ''], body, type: 'weapon' });
+  }
+  for (const a of system.armor || []) {
+    const meta = [a.soak && ('**Soak ' + a.soak + '**'), a.covers && ('Covers ' + a.covers), a.warmth && ('Warmth ' + a.warmth), a.penalty && a.penalty !== '—' && ('Penalty ' + a.penalty)].filter(Boolean).join(' · ');
+    const body = meta + (a.notes ? '\n\n' + a.notes : '');
+    items.push({ id: 'armor-' + a.name, title: a.name, category: 'Armor & Gear', tags: ['armor', 'soak', 'gear'], body, type: 'armor' });
   }
   for (const b of system.bestiary || []) {
-    items.push({ id: 'beast-' + b.name, title: b.name, category: 'Bestiary', tags: ['enemy', 'monster'], body: `${b.defense ? 'Defense ' + b.defense + ' · ' : ''}${b.body != null ? 'Body ' + b.body + ' · ' : ''}${b.speed ? 'Speed ' + b.speed : ''}\n${b.notes || ''}`, type: 'bestiary', beast: b });
+    const search = [b.defense && ('Defense ' + b.defense), b.attack != null && ('Attack ' + b.attack), b.stat, b.body != null && ('Body ' + b.body), b.speed && ('Speed ' + b.speed), b.drive, b.tactics, b.notes].filter(Boolean).join(' · ');
+    items.push({ id: 'beast-' + b.name, title: b.name, category: 'Bestiary', tags: ['enemy', 'monster'], body: search, type: 'bestiary', beast: b });
   }
   return items;
 }

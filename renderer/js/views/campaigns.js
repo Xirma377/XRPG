@@ -357,8 +357,44 @@ function openCreate() {
   setTimeout(() => nameI.focus(), 30);
 }
 
+// Prompt the GM to tie a new (otherwise blank) session to a storyline brief.
+// Resolves to a blueprint number, null (improvise), or false (cancel).
+export function chooseBrief(campaign) {
+  return new Promise((resolve) => {
+    const sessions = ((campaign.storyline && campaign.storyline.sessions) || []).slice().sort((a, b) => (a.number || 0) - (b.number || 0));
+    if (!sessions.length) { resolve(null); return; }
+    const played = new Set(store.where('sessions', (s) => s.campaignId === campaign.id).map((s) => s.blueprintNumber).filter((n) => n != null));
+    const list = el('div.col.gap-2', { style: { maxHeight: '46vh', overflow: 'auto' } });
+    sessions.forEach((sess) => {
+      const row = el('div.row.between', { style: { padding: '10px 12px', background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--r-1)' } });
+      const meta = el('div.grow');
+      const title = el('div', { style: { fontWeight: 600 } }, `S${sess.number} — ${sess.title || 'Untitled'}`);
+      if (played.has(sess.number)) title.appendChild(badge('Played', { variant: 'dim' }));
+      meta.appendChild(title);
+      if (sess.subtitle) meta.appendChild(el('div.small.mute', sess.subtitle));
+      row.appendChild(meta);
+      row.appendChild(button('Use this brief', { size: 'sm', variant: 'primary', onClick: () => { m.close(); resolve(sess.number); } }));
+      list.appendChild(row);
+    });
+    const m = modal({ title: 'Tie this session to a brief?', width: 640, body: [
+      el('p.small.mute', 'Pick a storyline session to load its brief — read-aloud, beats, the key decision, NPC fates. You can also run unscripted and link a brief later from the Brief tab.'),
+      list,
+    ] });
+    m.setFooter(
+      button('Run unscripted', { variant: 'ghost', onClick: () => { m.close(); resolve(null); } }),
+      button('Cancel', { variant: 'ghost', onClick: () => { m.close(); resolve(false); } }),
+    );
+  });
+}
+
 // ---------- Start a session (creates session doc, opens runner) ----------
 export async function startSession(campaign, blueprintNumber) {
+  // When no brief was pre-selected, prompt the GM to tie one in (or run unscripted).
+  if (blueprintNumber == null) {
+    const chosen = await chooseBrief(campaign);
+    if (chosen === false) return; // cancelled
+    blueprintNumber = chosen;
+  }
   const existing = store.where('sessions', (s) => s.campaignId === campaign.id);
   const number = existing.length + 1;
   const blueprint = blueprintNumber != null && campaign.storyline ? (campaign.storyline.sessions || []).find((s) => s.number === blueprintNumber) : null;
@@ -371,7 +407,7 @@ export async function startSession(campaign, blueprintNumber) {
     storylineVersion: campaign.currentVersion || 1,
     date: new Date().toISOString(), groupId: campaign.groupId,
     presentPlayerIds: group ? (group.playerIds || []).slice() : [],
-    log: [], notes: '', diceLog: [], combatState: null, clocks: [],
+    log: [], notes: '', diceLog: [], combatState: null, clocks: [], sceneId: null,
     transcript: '', summary: '', recommendations: '', reflection: '', audioMediaId: null,
     npcIntroduced: [], durationSec: 0,
   };

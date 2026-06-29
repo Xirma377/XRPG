@@ -8,6 +8,8 @@ import router from '../router.js';
 import { blankCharacter, allDeriveds, statLine, validateCreation } from '../rules.js';
 import { portraitNode } from '../portrait.js';
 import { addItem, updateItem, useItem, loseItem, removeItem, adjustReward, rewardStatOf, ensureProgress } from '../progress.js';
+import { visible, isSeed, builtinChip, copyToEdit, hideDoc } from '../seed.js';
+import { importFromFile } from '../share.js';
 
 export async function render(id, sub) {
   if (id === 'new') return openCreate();
@@ -20,6 +22,7 @@ let listState = { filter: 'all', q: '' };
 async function renderList() {
   shell.crumbs([{ label: 'Characters' }]);
   shell.actions([
+    button('Import', { icon: 'upload', size: 'sm', onClick: async () => { const created = await importFromFile(); if (created && created.length) { const ch = created.find((c) => c.collection === 'characters'); if (ch) router.go('characters', ch.id); } } }),
     button('New NPC', { icon: 'npc', size: 'sm', onClick: () => openCreate('npc') }),
     button('New PC', { icon: 'plus', variant: 'primary', size: 'sm', onClick: () => openCreate('pc') }),
   ]);
@@ -43,7 +46,7 @@ async function renderList() {
 
   function draw() {
     clear(grid);
-    let chars = store.all('characters');
+    let chars = visible(store.all('characters'));
     if (listState.filter !== 'all') chars = chars.filter((c) => (c.kind || 'pc') === listState.filter);
     if (listState.q) { const q = listState.q.toLowerCase(); chars = chars.filter((c) => (c.name + ' ' + (c.role || '') + ' ' + (c.tags || []).join(' ')).toLowerCase().includes(q)); }
     chars.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
@@ -71,6 +74,7 @@ function charCard(c) {
   ht.appendChild(el('div.ec-sub', c.role || (c.kind === 'npc' ? 'NPC' : 'Player Character')));
   head.appendChild(ht);
   head.appendChild(badge(c.kind === 'npc' ? 'NPC' : 'PC', { color: c.kind === 'npc' ? 'var(--npc)' : 'var(--pc)' }));
+  if (isSeed(c)) head.appendChild(builtinChip());
   card_.appendChild(head);
 
   if (sys) {
@@ -121,19 +125,29 @@ async function renderDetail(id) {
   const sys = store.get('rulesets', c.systemId) || appState.system;
   shell.crumbs([{ label: 'Characters', to: 'characters' }, { label: c.name || 'Unnamed' }]);
 
+  const seed = isSeed(c);
   let working = deepClone(c);
-  const save = debounce(async () => { await store.save('characters', working); }, 350);
-  const saveNow = async () => { await store.save('characters', working); };
+  // Built-in (seeded) characters are read-only: edits are no-ops until the user
+  // makes an editable copy. (The main-process store guard also blocks any write.)
+  const save = seed ? () => {} : debounce(async () => { await store.save('characters', working); }, 350);
+  const saveNow = seed ? async () => {} : async () => { await store.save('characters', working); };
 
-  shell.actions([
-    badge(sys ? sys.name : '—', { variant: 'dim' }),
-    button('Copy to System', { icon: 'layers', size: 'sm', onClick: () => copyToSystem(working) }),
-    button('Export', { icon: 'download', size: 'sm', onClick: async () => { const p = await window.xrpg.dialog.saveJson(`${(working.name || 'character').replace(/\s+/g, '-').toLowerCase()}.character.json`, { kind: 'xrpg-doc', collection: 'characters', doc: working }); if (p) toast('Exported', { type: 'success' }); } }),
-    button('Duplicate', { icon: 'copy', size: 'sm', onClick: async () => { const copy = deepClone(working); copy.id = (copy.kind === 'npc' ? 'npc_' : 'pc_') + uid('').slice(0, 8); copy.name += ' (copy)'; delete copy.createdAt; delete copy.updatedAt; await store.save('characters', copy); toast('Duplicated', { type: 'success' }); router.go('characters', copy.id); } }),
-    button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: async () => { if (await confirm({ title: 'Delete character?', message: `Delete "${working.name}"? This cannot be undone.`, danger: true, okLabel: 'Delete' })) { await store.remove('characters', id); router.go('characters'); } } }),
-  ]);
+  const acts = [badge(sys ? sys.name : '—', { variant: 'dim' })];
+  if (seed) acts.push(builtinChip(), button('Copy to Edit', { icon: 'copy', size: 'sm', variant: 'primary', onClick: () => copyToEdit('characters', c, { navigateView: 'characters' }) }));
+  acts.push(button('Copy to System', { icon: 'layers', size: 'sm', onClick: () => copyToSystem(working) }));
+  acts.push(button('Export', { icon: 'download', size: 'sm', onClick: async () => { const p = await window.xrpg.dialog.saveJson(`${(working.name || 'character').replace(/\s+/g, '-').toLowerCase()}.character.json`, { kind: 'xrpg-doc', collection: 'characters', doc: working }); if (p) toast('Exported', { type: 'success' }); } }));
+  if (!seed) acts.push(button('Duplicate', { icon: 'copy', size: 'sm', onClick: async () => { const copy = deepClone(working); copy.id = (copy.kind === 'npc' ? 'npc_' : 'pc_') + uid('').slice(0, 8); copy.name += ' (copy)'; delete copy.createdAt; delete copy.updatedAt; await store.save('characters', copy); toast('Duplicated', { type: 'success' }); router.go('characters', copy.id); } }));
+  if (seed) acts.push(button('Hide', { icon: 'eyeOff', size: 'sm', onClick: async () => { await hideDoc(c.id); toast(`${c.name} hidden`, { type: 'success' }); router.go('characters'); } }));
+  acts.push(button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: async () => { if (await confirm({ title: 'Delete character?', message: `Delete "${working.name}"? This cannot be undone.${seed ? ' You can restore built-in content in Settings → Data.' : ''}`, danger: true, okLabel: 'Delete' })) { await store.remove('characters', id); router.go('characters'); } } }));
+  shell.actions(acts);
 
   const wrap = el('div.view-pad');
+  if (seed) {
+    const banner = el('div.notice', { style: { display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' } });
+    banner.appendChild(el('div.grow', [el('b', 'Built-in character (read-only). '), 'Changes here will not be saved. Make an editable copy to play or customize this character.']));
+    banner.appendChild(button('Copy to Edit', { icon: 'copy', variant: 'primary', onClick: () => copyToEdit('characters', c, { navigateView: 'characters' }) }));
+    wrap.appendChild(banner);
+  }
   const detail = el('div.detail');
 
   // ---- main column ----

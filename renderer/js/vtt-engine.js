@@ -1,7 +1,7 @@
 // Canvas virtual tabletop engine: map, grid, tokens (drag/snap), fog of war,
 // measurement, drawing, ping, pan/zoom. Emits 'change' for persistence.
 import { Emitter, uid, debounce, clamp } from './util.js';
-import { tokenSvg, mapSvg, svgToDataUrl, TOKEN_COLORS } from './assets.js';
+import { tokenSvg, mapSvg, svgToDataUrl, TOKEN_COLORS, objectSvg, objectMeta, OBJECT_KINDS } from './assets.js';
 
 export class VTT extends Emitter {
   constructor(canvas) {
@@ -43,9 +43,13 @@ export class VTT extends Emitter {
     this.emit('scene', scene);
   }
 
+  _isObject(t) { return OBJECT_KINDS.has(t.kind); }
+
   _ensureTokenImg(t) {
     if (t.image) { this._loadImage(t.image, (img) => this.tokenImgs.set(t.id, img)); }
-    else {
+    else if (this._isObject(t)) {
+      this._loadImage(svgToDataUrl(objectSvg(t.kind, { color: t.color })), (img) => this.tokenImgs.set(t.id, img));
+    } else {
       const svg = tokenSvg({ label: t.label || (t.name || '?').slice(0, 2), color: t.color || TOKEN_COLORS[t.kind] || '#6f93b0' });
       this._loadImage(svgToDataUrl(svg), (img) => this.tokenImgs.set(t.id, img));
     }
@@ -68,15 +72,17 @@ export class VTT extends Emitter {
 
   // ---------- Tokens ----------
   addToken(spec) {
+    const om = OBJECT_KINDS.has(spec.kind) ? objectMeta(spec.kind) : null;
     const t = {
       id: 'tok_' + uid('').slice(0, 6),
-      name: spec.name || 'Token', kind: spec.kind || 'neutral',
+      name: spec.name || (om ? om.label : 'Token'), kind: spec.kind || 'neutral',
       x: spec.x != null ? spec.x : (this.scene.w || 1200) / 2,
       y: spec.y != null ? spec.y : (this.scene.h || 800) / 2,
-      size: spec.size || 1, color: spec.color || TOKEN_COLORS[spec.kind] || '#6f93b0',
+      size: spec.size || (om ? om.size : 1), color: spec.color || TOKEN_COLORS[spec.kind] || (om ? om.color : '#6f93b0'),
       label: spec.label || (spec.name || '?').slice(0, 2),
       charId: spec.charId || null, image: spec.image || null,
       hp: spec.hp || null, conditions: spec.conditions || [],
+      rot: spec.rot || 0,
     };
     this.scene.tokens = this.scene.tokens || [];
     this.scene.tokens.push(t);
@@ -85,7 +91,7 @@ export class VTT extends Emitter {
     return t;
   }
 
-  updateToken(id, patch) { const t = (this.scene.tokens || []).find((x) => x.id === id); if (!t) return; Object.assign(t, patch); if (patch.color || patch.label || patch.image) { t.image = patch.image || t.image; this._ensureTokenImg(t); } this._save(); }
+  updateToken(id, patch) { const t = (this.scene.tokens || []).find((x) => x.id === id); if (!t) return; Object.assign(t, patch); if (patch.color || patch.label || patch.image || patch.kind) { if (patch.image !== undefined) t.image = patch.image; this._ensureTokenImg(t); } this._save(); }
   removeToken(id) { this.scene.tokens = (this.scene.tokens || []).filter((t) => t.id !== id); if (this.selected === id) this.selected = null; this._save(); }
   getToken(id) { return (this.scene.tokens || []).find((t) => t.id === id); }
 
@@ -169,6 +175,7 @@ export class VTT extends Emitter {
     if (this.tool === 'measure') { this.measure = { x1: w.x, y1: w.y, x2: w.x, y2: w.y }; this._drag.mode = 'measure'; return; }
     if (this.tool === 'fog-reveal' || this.tool === 'fog-hide') { this._drag.mode = 'fog'; this._paintFog(w.x, w.y, this.tool === 'fog-reveal'); return; }
     if (this.tool === 'draw') { this.drawing = { color: this.penColor, width: 3 / this.view.scale, points: [{ x: w.x, y: w.y }] }; this._drag.mode = 'draw'; return; }
+    if (this.tool === 'erase') { this._drag.mode = 'erase'; this._eraseAt(w.x, w.y); return; }
     if (this.tool === 'ping') { this.ping(w.x, w.y); this.emit('ping', w); this._drag.mode = 'none'; return; }
     this._drag.mode = 'pan';
   }
@@ -189,6 +196,7 @@ export class VTT extends Emitter {
       case 'measure': this.measure.x2 = w.x; this.measure.y2 = w.y; break;
       case 'fog': this._paintFog(w.x, w.y, this.tool === 'fog-reveal'); break;
       case 'draw': if (this.drawing) this.drawing.points.push({ x: w.x, y: w.y }); break;
+      case 'erase': this._eraseAt(w.x, w.y); break;
     }
   }
 
@@ -225,6 +233,14 @@ export class VTT extends Emitter {
   zoomBy(f) { const cw = this.canvas.clientWidth / 2, chh = this.canvas.clientHeight / 2; const before = this.screenToWorld(cw, chh); this.view.scale = clamp(this.view.scale * f, 0.15, 6); const after = this.screenToWorld(cw, chh); this.view.x += (after.x - before.x) * this.view.scale; this.view.y += (after.y - before.y) * this.view.scale; }
 
   clearDrawings() { this.scene.drawings = []; this._save(); }
+
+  // Erase whole drawing strokes that fall under the eraser cursor (drag to erase).
+  _eraseAt(wx, wy) {
+    const r = (((this.scene.grid && this.scene.grid.size) || 50) * 0.55);
+    const drawings = this.scene.drawings || [];
+    const kept = drawings.filter((d) => !(d.points || []).some((p) => Math.hypot(p.x - wx, p.y - wy) <= r + (d.width || 3) / 2));
+    if (kept.length !== drawings.length) { this.scene.drawings = kept; this._save(); }
+  }
 
   // ---------- Render ----------
   _resize() {
@@ -266,8 +282,10 @@ export class VTT extends Emitter {
     (this.scene.drawings || []).forEach((d) => this._drawStroke(ctx, d));
     if (this.drawing) this._drawStroke(ctx, this.drawing);
 
-    // tokens
-    (this.scene.tokens || []).forEach((t) => this._drawToken(ctx, t));
+    // tokens — objects (scenery) first so character tokens sit on top
+    const toks = this.scene.tokens || [];
+    toks.forEach((t) => { if (this._isObject(t)) this._drawToken(ctx, t); });
+    toks.forEach((t) => { if (!this._isObject(t)) this._drawToken(ctx, t); });
 
     // measure
     if (this.measure) this._drawMeasure(ctx);
@@ -311,7 +329,33 @@ export class VTT extends Emitter {
     ctx.stroke();
   }
 
+  _drawObject(ctx, t) {
+    const r = this._tokenRadius(t);
+    const s = r * 2;
+    const img = this.tokenImgs.get(t.id);
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    if (t.rot) ctx.rotate((t.rot * Math.PI) / 180);
+    // soft shadow
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.fillRect(-r + 1 / this.view.scale, -r + 2 / this.view.scale, s, s);
+    if (img) ctx.drawImage(img, -r, -r, s, s);
+    else { ctx.fillStyle = t.color || '#c0986f'; ctx.fillRect(-r, -r, s, s); }
+    if (this.selected === t.id) { ctx.lineWidth = 3 / this.view.scale; ctx.strokeStyle = '#ffd24a'; ctx.strokeRect(-r, -r, s, s); }
+    ctx.restore();
+    // label only when selected (objects are usually self-evident; keeps the map clean)
+    if (this.selected === t.id && t.name) {
+      ctx.save();
+      ctx.font = `${Math.round(12 / this.view.scale + 3)}px Oswald, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      const tw = ctx.measureText(t.name).width;
+      ctx.fillStyle = 'rgba(0,0,0,0.6)'; ctx.fillRect(t.x - tw / 2 - 4, t.y + r + 2, tw + 8, 16 / this.view.scale + 4);
+      ctx.fillStyle = '#fff'; ctx.fillText(t.name, t.x, t.y + r + 4);
+      ctx.restore();
+    }
+  }
+
   _drawToken(ctx, t) {
+    if (this._isObject(t)) return this._drawObject(ctx, t);
     const r = this._tokenRadius(t);
     const img = this.tokenImgs.get(t.id);
     ctx.save();

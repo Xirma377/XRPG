@@ -81,6 +81,7 @@ const api = {
   settings: {
     get: () => invoke('settings:get'),
     set: (obj) => invoke('settings:set', obj),
+    onChanged: (cb) => ipcRenderer.on('settings:changed', (_e, p) => cb(p)),
   },
 
   secret: {

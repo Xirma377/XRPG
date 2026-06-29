@@ -9,6 +9,8 @@ import { invalidateLive, invalidateModel } from '../ai-client.js';
 import { brandLogoSvg } from '../assets.js';
 import updates from '../updates.js';
 import discord from '../discord.js';
+import { setBuiltinsHidden, showAllBuiltins } from '../seed.js';
+import { importShared } from '../share.js';
 
 let unsub = [];
 export function teardown() { unsub.forEach((u) => u && u()); unsub = []; }
@@ -25,6 +27,23 @@ export async function render() {
 
   const wrap = el('div.view-pad');
   wrap.appendChild(el('h2', { style: { marginBottom: '18px' } }, 'Settings'));
+
+  // ---- Role ----
+  const roleSec = section('Mode', 'Game Master mode unlocks the full toolkit. Player mode is a streamlined experience for building and playing your own character.');
+  const role = settings.role || 'gm';
+  const roleRow = el('div.row.gap-2');
+  const setRole = async (r) => {
+    if (r === (settings.role || 'gm')) return;
+    await store.setSettings({ role: r });
+    toast(r === 'player' ? 'Switched to Player mode' : 'Switched to GM mode', { type: 'success' });
+    setTimeout(() => location.reload(), 350); // rebuild nav/shell for the new role
+  };
+  const gmBtn = button('Game Master', { icon: 'swords', variant: role === 'gm' ? 'primary' : 'default', onClick: () => setRole('gm') });
+  const plBtn = button('Player', { icon: 'mask', variant: role === 'player' ? 'primary' : 'default', onClick: () => setRole('player') });
+  roleRow.appendChild(gmBtn); roleRow.appendChild(plBtn);
+  roleSec.appendChild(roleRow);
+  roleSec.appendChild(el('p.small.faint', { style: { marginTop: '8px' } }, 'Currently: ' + (role === 'player' ? 'Player' : 'Game Master') + ' mode.'));
+  wrap.appendChild(roleSec);
 
   // ---- AI ----
   const aiSec = section('AI Integration (Claude)', 'Connect Claude for live storyline evolution, NPC and campaign generation, and session recaps. Without a key, XRPG uses a copy/paste bridge instead.');
@@ -73,11 +92,24 @@ export async function render() {
   const dataRow = el('div.row.gap-2.wrap');
   dataRow.appendChild(button('Open data folder', { icon: 'folder', onClick: () => window.xrpg.shell.openDataFolder() }));
   dataRow.appendChild(button('Export everything', { icon: 'download', onClick: async () => { const dump = await store.exportAll(); const path = await window.xrpg.dialog.saveJson('xrpg-backup.xrpg', dump); if (path) toast('Backup saved', { type: 'success' }); } }));
-  dataRow.appendChild(button('Import / restore', { icon: 'upload', onClick: async () => { const dump = await window.xrpg.dialog.openJson(); if (!dump) return; if (dump.kind === 'xrpg-doc') { await store.save(dump.collection, dump.doc); toast('Imported document', { type: 'success' }); } else { await store.importAll(dump, { merge: true }); toast('Data imported', { type: 'success' }); } } }));
+  dataRow.appendChild(button('Import / restore', { icon: 'upload', title: 'Import a system, storyline, character, shared bundle, or a full backup', onClick: async () => { const dump = await window.xrpg.dialog.openJson(); if (!dump) return; if (dump.kind === 'xrpg-doc' || dump.kind === 'xrpg-bundle') { await importShared(dump); } else { await store.importAll(dump, { merge: true }); toast('Data imported', { type: 'success' }); } } }));
   dSec.appendChild(dataRow);
   const dataRow2 = el('div.row.gap-2.wrap', { style: { marginTop: '10px' } });
   dataRow2.appendChild(button('Restore built-in content', { icon: 'refresh', onClick: async () => { if (await confirm({ title: 'Restore built-in content?', message: 'Re-adds the default STRAIN Z system, storyline, demo systems and party if they were deleted. Your own content is untouched.' })) { await window.xrpg.store.reseed({ overwrite: false }); await store.loadAll(); toast('Built-in content restored', { type: 'success' }); } } }));
   dSec.appendChild(dataRow2);
+  // Built-in (seeded) content visibility. Built-ins are read-only; you can hide
+  // them from the lists (your own copies are unaffected) and bring them back any time.
+  dSec.appendChild(el('div.divider', { style: { marginTop: '14px' } }, 'Built-in content'));
+  const hideRow = el('div.col.gap-2');
+  hideRow.appendChild(checkbox('Hide all built-in content (systems, storylines, characters, scenes)', {
+    checked: !!appState.settings.builtinsHidden,
+    onChange: async (val) => { await setBuiltinsHidden(val); toast(val ? 'Built-in content hidden' : 'Built-in content shown', { type: 'success' }); },
+  }));
+  const hideBtns = el('div.row.gap-2.wrap');
+  hideBtns.appendChild(button('Show all built-ins', { icon: 'eye', size: 'sm', onClick: async () => { await showAllBuiltins(); toast('All built-ins shown', { type: 'success' }); } }));
+  hideRow.appendChild(hideBtns);
+  hideRow.appendChild(el('p.small.faint', 'Built-in systems, storylines, characters and scenes are read-only. Use “Copy to Edit” on any of them to make your own editable version — your copies are never overwritten when the built-ins update.'));
+  dSec.appendChild(hideRow);
   dSec.appendChild(el('p.small.faint', { style: { marginTop: '10px' } }, 'Data folder: ' + info.dataDir));
   wrap.appendChild(dSec);
 

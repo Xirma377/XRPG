@@ -160,7 +160,10 @@ function createWindow() {
     else if (SHOT_ROUTE) runShot();
   });
 
-  mainWindow.loadURL(TEST_MODE ? 'xrpg://app/test.html' : 'xrpg://app/index.html');
+  // Dev-capture flags (screenshots/demo) skip the first-run role prompt so boot
+  // doesn't block waiting for a click.
+  const DEV_CAPTURE = SHOT_ROUTE || DEMO_MODE || MIX_SHOT || POPOUT_SHOT;
+  mainWindow.loadURL(TEST_MODE ? 'xrpg://app/test.html' : ('xrpg://app/index.html' + (DEV_CAPTURE ? '?dev=1' : '')));
 
   // Open external links in the OS browser, never in-app.
   mainWindow.webContents.setWindowOpenHandler(({ url: target }) => {

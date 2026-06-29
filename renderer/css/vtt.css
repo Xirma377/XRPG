@@ -11,6 +11,7 @@
 .vtt-canvas.tool-measure { cursor: crosshair; }
 .vtt-canvas.tool-fog { cursor: cell; }
 .vtt-canvas.tool-draw { cursor: crosshair; }
+.vtt-canvas.tool-erase { cursor: cell; }
 .vtt-sidebar { position: absolute; top: 10px; right: 10px; width: 250px; max-height: calc(100% - 20px); background: color-mix(in srgb, var(--bg-1) 94%, transparent); border: 1px solid var(--line); border-radius: var(--r-2); backdrop-filter: blur(8px); display: flex; flex-direction: column; overflow: hidden; box-shadow: var(--shadow-2); }
 .vtt-sidebar.hidden { display: none; }
 .vtt-sb-head { padding: 9px 12px; border-bottom: 1px solid var(--line-soft); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--text-mute); display: flex; justify-content: space-between; align-items: center; }

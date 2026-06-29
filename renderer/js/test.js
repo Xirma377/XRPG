@@ -4,7 +4,7 @@ import { parseNotation, rollNotation, resolveCheck, rollUnderProbability } from 
 import { allDeriveds, blankCharacter, statLine, validateCreation, buildReferenceIndex, searchReference, computeDerived } from './rules.js';
 import { extractJson } from './ai-client.js';
 import { renderMarkdown } from './markdown.js';
-import { portraitSvg, tokenSvg, mapSvg, clockDialSvg, svgToDataUrl } from './assets.js';
+import { portraitSvg, tokenSvg, mapSvg, clockDialSvg, svgToDataUrl, objectSvg, OBJECT_KINDS, objectMeta } from './assets.js';
 import { uid } from './util.js';
 import store from './store.js';
 
@@ -78,6 +78,16 @@ async function run() {
     ok('rules: Composure = 3 (low wits/charm)', der.composure === 3, JSON.stringify(der));
     const der2 = allDeriveds(sz, { attrs: { brawn: 10, agility: 10, wits: 13, charm: 13 } });
     ok('rules: Composure = 5 (high wits/charm)', der2.composure === 5, JSON.stringify(der2));
+    // Defense derived: Agility bands (≤6 −1, 7–9 0, 10–12 +1, 13–15 +2, 16 +3).
+    ok('rules: Defense = 0 (Agility 9)', der.defense === 0, JSON.stringify(der));
+    ok('rules: Defense = +1 (Agility 10)', der2.defense === 1, JSON.stringify(der2));
+    ok('rules: Defense = +3 (Agility 16)', allDeriveds(sz, { attrs: { agility: 16 } }).defense === 3);
+    ok('rules: Defense = −1 (Agility 5)', allDeriveds(sz, { attrs: { agility: 5 } }).defense === -1);
+    // Comprehensive content sweep: weapons, armor, expanded bestiary + tables.
+    ok('content: weapons fleshed out', (sz.weapons || []).length >= 14 && sz.weapons.every((w) => w.damage && w.range), String((sz.weapons || []).length));
+    ok('content: armor table present', (sz.armor || []).length >= 6 && sz.armor.every((a) => a.soak), String((sz.armor || []).length));
+    ok('content: bestiary has dead + living', (sz.bestiary || []).length >= 12 && sz.bestiary.some((b) => b.stat), String((sz.bestiary || []).length));
+    ok('content: tables complete', (sz.tables || []).length >= 10, String((sz.tables || []).length));
     const line = statLine(sz, mac);
     ok('rules: statLine format', /13 \/ 9 \/ 9 \/ 8/.test(line) && /VIT 19/.test(line), line);
     const blank = blankCharacter(sz, 'pc');
@@ -185,6 +195,12 @@ async function run() {
   ok('encounter: clock tick', encounter.state.clocks[0].filled === 3);
   encounter.tickClock(encounter.state.clocks[0].id, 99);
   ok('encounter: clock clamps to size', encounter.state.clocks[0].filled === 6);
+  // per-session combat: serialize -> mutate -> restore exact board
+  const snapshot = encounter.serialize();
+  encounter.reset();
+  ok('encounter: reset clears board', encounter.state.combatants.length === 0 && encounter.state.clocks.length === 0);
+  encounter.loadState(snapshot);
+  ok('encounter: loadState restores board', encounter.state.combatants.length === snapshot.combatants.length && encounter.state.clocks.length === 1, JSON.stringify({ c: encounter.state.combatants.length }));
   // turn order
   encounter.addCombatant({ name: 'B', hp: { cur: 5, max: 5 } });
   encounter.resetTurns();
@@ -192,6 +208,43 @@ async function run() {
   encounter.nextTurn(); encounter.nextTurn(); encounter.nextTurn();
   ok('encounter: round advances after wrap', encounter.state.round === r0 + 1, 'round=' + encounter.state.round);
   encounter.reset();
+
+  // ---- VTT objects + scene presets + Sunset Point content ----
+  ok('objects: OBJECT_KINDS has furniture/vehicles', OBJECT_KINDS.has('car') && OBJECT_KINDS.has('table') && OBJECT_KINDS.has('barricade'));
+  ok('objects: objectSvg renders an svg', /^<svg/.test(objectSvg('car')) && /^<svg/.test(objectSvg('campfire')));
+  ok('objects: objectMeta gives a footprint', objectMeta('truck') && objectMeta('truck').size >= 2);
+  await store.ensure('scenes');
+  const spScene = store.get('scenes', 'scene_sunsetpoint');
+  ok('seed: Sunset Point scene present + read-only', !!spScene && spScene._seed === true, JSON.stringify(!!spScene));
+  ok('seed: Sunset Point scene has objects', !!spScene && (spScene.tokens || []).some((t) => OBJECT_KINDS.has(t.kind)), String(spScene && (spScene.tokens || []).length));
+  await store.ensure('storylines');
+  const szStory = store.get('storylines', 'story_longwayhome');
+  const spLoc = szStory && (szStory.locations || []).find((l) => /Sunset Point/.test(l.name));
+  ok('content: Sunset Point location fleshed out', !!spLoc && !!spLoc.details && !!spLoc.readAloud && spLoc.sceneId === 'scene_sunsetpoint', JSON.stringify(spLoc ? Object.keys(spLoc) : null));
+  ok('content: Sunset Point has a tracked clock', !!spLoc && (spLoc.clocks || []).some((c) => /Someone Dies Inside/.test(c.name)));
+
+  // ---- presenter (player display) state ----
+  const { presenterFrom } = await import('./presenter.js');
+  const pp = presenterFrom({ presenter: { background: 'tabletop', overlays: { clocks: true } } });
+  ok('presenter: defaults merge', pp.background === 'tabletop' && pp.overlays.clocks === true && pp.overlays.initiative === false && pp.push === 'none');
+  ok('presenter: empty -> idle defaults', presenterFrom({}).background === 'idle' && presenterFrom({}).push === 'none');
+
+  // ---- share: bundle import = editable copies with remapped refs ----
+  const { importShared } = await import('./share.js');
+  const bundle = { kind: 'xrpg-bundle', docs: [
+    { collection: 'rulesets', doc: { id: 'sys_imp', name: 'Imported Sys', _seed: true, attributes: [], dice: { notation: '1d20', resolution: 'roll-high' } } },
+    { collection: 'characters', doc: { id: 'npc_imp', name: 'Imported NPC', kind: 'npc', systemId: 'sys_imp' } },
+    { collection: 'storylines', doc: { id: 'story_imp', name: 'Imported Story', systemId: 'sys_imp', npcs: ['npc_imp'], factions: [{ name: 'F', leaderRef: 'npc_imp' }] } },
+  ] };
+  const created = await importShared(bundle);
+  ok('share: bundle imports all docs', !!created && created.length === 3, JSON.stringify(created && created.length));
+  const impSys = created && store.get('rulesets', created.find((c) => c.collection === 'rulesets').id);
+  const impStory = created && store.get('storylines', created.find((c) => c.collection === 'storylines').id);
+  const impNpc = created && store.get('characters', created.find((c) => c.collection === 'characters').id);
+  ok('share: imported as editable (not seed)', !!impSys && impSys._seed === false && impStory._seed === false);
+  ok('share: system ref remapped', !!impStory && impStory.systemId === impSys.id && impStory.systemId !== 'sys_imp');
+  ok('share: storyline npc + faction refs remapped', !!impStory && !!impNpc && impStory.npcs[0] === impNpc.id && impStory.npcs[0] !== 'npc_imp' && impStory.factions[0].leaderRef === impNpc.id);
+  for (const c of (created || [])) await store.remove(c.collection, c.id);
 
   // ---- versioning logic (commitStoryline) ----
   const { commitStoryline } = await import('./views/campaigns.js');

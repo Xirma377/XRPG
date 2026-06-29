@@ -56,6 +56,14 @@ class AppState extends Emitter {
     this.emit('session', id);
     this.emit('change');
   }
+
+  // Merge a patch into settings (kept in sync with the persisted copy) and notify.
+  async updateSettings(patch) {
+    this.settings = { ...this.settings, ...patch };
+    await store.setSettings(patch);
+    this.emit('settings', this.settings);
+    this.emit('change');
+  }
 }
 
 export const appState = new AppState();

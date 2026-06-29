@@ -25,7 +25,24 @@ function registerIpc({ ipcMain, store, ai, transcribe, updater, discord, getWind
   handle('store:list', (coll) => store.list(coll));
   handle('store:get', (coll, id) => store.get(coll, id));
   // put/remove broadcast a change so other windows (e.g. a popped-out player display) stay live.
-  ipcMain.handle('store:put', async (_e, coll, doc) => { try { const saved = await store.put(coll, doc); broadcast('store:changed', { coll, id: saved.id }, _e.sender.id); return { ok: true, data: saved }; } catch (err) { return { ok: false, error: err.message }; } });
+  // Built-in (seeded) docs are read-only: the renderer must make an editable copy
+  // instead. Seeding/reseed call store.put directly (in-process) so they bypass this guard.
+  ipcMain.handle('store:put', async (_e, coll, doc) => {
+    try {
+      if (doc && doc.id) {
+        const existing = await store.get(coll, doc.id);
+        if (existing && existing._seed) {
+          // Built-in docs are immutable. Silently ignore the write and return the
+          // UNCHANGED doc so the renderer's optimistic UI doesn't throw or hang —
+          // the UI already gates editing (read-only banners + "Copy to Edit").
+          return { ok: true, data: existing };
+        }
+      }
+      const saved = await store.put(coll, doc);
+      broadcast('store:changed', { coll, id: saved.id }, _e.sender.id);
+      return { ok: true, data: saved };
+    } catch (err) { return { ok: false, error: err.message }; }
+  });
   ipcMain.handle('store:remove', async (_e, coll, id) => { try { const r = await store.remove(coll, id); broadcast('store:changed', { coll, id, removed: true }, _e.sender.id); return { ok: true, data: r }; } catch (err) { return { ok: false, error: err.message }; } });
   handle('store:exportAll', () => store.exportAll());
   handle('store:importAll', (dump, opts) => store.importAll(dump, opts));
@@ -34,7 +51,12 @@ function registerIpc({ ipcMain, store, ai, transcribe, updater, discord, getWind
 
   // ---- Settings ----
   handle('settings:get', () => store.getSettings());
-  handle('settings:set', (obj) => store.setSettings(obj));
+  // Broadcast settings changes to OTHER windows so the player display / reference
+  // windows stay live (presenter state + combat/encounter state both live in settings).
+  ipcMain.handle('settings:set', async (_e, obj) => {
+    try { const next = await store.setSettings(obj); broadcast('settings:changed', next, _e.sender.id); return { ok: true, data: next }; }
+    catch (err) { return { ok: false, error: err.message }; }
+  });
 
   // ---- Secrets (never expose the value back to the renderer) ----
   handle('secret:has', (key) => store.hasSecret(key));

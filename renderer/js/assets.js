@@ -110,6 +110,22 @@ export function mapSvg(kind = 'grid', opts = {}) {
       <line x1="${w * 0.5}" y1="${h * 0.62}" x2="${w * 0.5}" y2="${h - 80}" stroke="#39455a" stroke-width="5"/>
       <line x1="80" y1="${h * 0.5}" x2="${w * 0.3}" y2="${h * 0.5}" stroke="#39455a" stroke-width="5"/>
       ${grid}`,
+    rest_area: () => `
+      <rect width="${w}" height="${h}" fill="#1b2430"/>
+      <rect width="${w}" height="${h}" fill="url(#snowtex)"/>
+      <rect x="80" y="${h * 0.5}" width="${w - 160}" height="${h * 0.42}" fill="#2a2f37" stroke="#3a4350" stroke-width="3"/>
+      <g stroke="#c9b85a" stroke-width="3" opacity="0.4">
+        ${Array.from({ length: 9 }, (_, i) => `<line x1="${120 + i * 118}" y1="${h * 0.52}" x2="${120 + i * 118}" y2="${h * 0.66}"/>`).join('')}
+        ${Array.from({ length: 9 }, (_, i) => `<line x1="${120 + i * 118}" y1="${h * 0.74}" x2="${120 + i * 118}" y2="${h * 0.88}"/>`).join('')}
+      </g>
+      <rect x="${w * 0.34}" y="70" width="${w * 0.32}" height="${h * 0.28}" fill="#33404e" stroke="#5a6c7e" stroke-width="5"/>
+      <text x="${w * 0.5}" y="${70 + h * 0.14}" text-anchor="middle" fill="#8aa0b4" font-family="Oswald, sans-serif" font-size="26" opacity="0.7">VISITOR CENTER</text>
+      <rect x="${w * 0.47}" y="${70 + h * 0.28 - 9}" width="${w * 0.06}" height="16" fill="#9bb6c9"/>
+      <rect x="120" y="90" width="120" height="120" fill="#2c3742" stroke="#46525f" stroke-width="4"/>
+      <rect x="${w - 240}" y="90" width="120" height="120" fill="#2c3742" stroke="#46525f" stroke-width="4"/>
+      ${[0, 1, 2].map((i) => `<rect x="${w * 0.30 + i * 150}" y="${h * 0.40}" width="92" height="58" fill="#3a3326" stroke="#6a5a3a" stroke-width="3" opacity="0.85"/>`).join('')}
+      <rect x="${w - 200}" y="${h - 180}" width="120" height="100" fill="#26302a" stroke="#3f5040" stroke-width="4"/>
+      ${grid}`,
   };
   const body = (maps[kind] || maps.grid)();
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
@@ -217,3 +233,56 @@ export const TOKEN_COLORS = {
   pc: '#5bd0a0', npc: '#c9a0ff', threat: '#ff7a6b', neutral: '#6f93b0',
   ally: '#7fd1d6', object: '#c0986f', boss: '#ff5a4d',
 };
+
+// Placeable map objects (furniture, vehicles, terrain, props). Each renders as a
+// SQUARE footprint with a top-down glyph; `size` is the default grid footprint.
+export const OBJECTS = [
+  { key: 'car', label: 'Car', color: '#7d8aa0', size: 2, cat: 'Vehicles' },
+  { key: 'truck', label: 'Truck / Semi', color: '#6b7280', size: 3, cat: 'Vehicles' },
+  { key: 'snowplow', label: 'Snowplow', color: '#d98a3a', size: 3, cat: 'Vehicles' },
+  { key: 'wreck', label: 'Wreck', color: '#5a5f66', size: 2, cat: 'Vehicles' },
+  { key: 'table', label: 'Table', color: '#9c7a4d', size: 1, cat: 'Furniture' },
+  { key: 'chair', label: 'Chair', color: '#8a6f48', size: 1, cat: 'Furniture' },
+  { key: 'bed', label: 'Bed / cot', color: '#7d6e8a', size: 2, cat: 'Furniture' },
+  { key: 'counter', label: 'Counter', color: '#7a6a52', size: 2, cat: 'Furniture' },
+  { key: 'shelf', label: 'Shelf', color: '#6f5a3c', size: 1, cat: 'Furniture' },
+  { key: 'crate', label: 'Crate', color: '#a07a45', size: 1, cat: 'Props' },
+  { key: 'barrel', label: 'Barrel', color: '#8a6233', size: 1, cat: 'Props' },
+  { key: 'barricade', label: 'Barricade', color: '#b9a94a', size: 1, cat: 'Props' },
+  { key: 'door', label: 'Door', color: '#a98c5a', size: 1, cat: 'Structure' },
+  { key: 'campfire', label: 'Fire / heat', color: '#ff7a3a', size: 1, cat: 'Terrain' },
+  { key: 'tree', label: 'Tree', color: '#4f7a4a', size: 1, cat: 'Terrain' },
+  { key: 'rock', label: 'Rock', color: '#7c7f86', size: 1, cat: 'Terrain' },
+  { key: 'object', label: 'Marker', color: '#c0986f', size: 1, cat: 'Props' },
+];
+export const OBJECT_KINDS = new Set(OBJECTS.map((o) => o.key));
+export function objectMeta(kind) { return OBJECTS.find((o) => o.key === kind) || null; }
+
+// Top-down object art. Square viewBox; the VTT renders the whole square (no circle clip).
+export function objectSvg(kind = 'object', opts = {}) {
+  const meta = objectMeta(kind) || { color: '#c0986f' };
+  const color = opts.color || meta.color || '#c0986f';
+  const c1 = shade(color, 18), ink = shade(color, -55);
+  const dk = (a) => shade(color, a);
+  const base = `<rect x="5" y="5" width="90" height="90" rx="12" fill="${dk(-25)}" opacity="0.22"/>`;
+  const G = {
+    car: `<rect x="24" y="12" width="52" height="76" rx="15" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="30" y="20" width="40" height="22" rx="7" fill="${dk(-42)}" opacity="0.75"/><rect x="30" y="56" width="40" height="24" rx="7" fill="${dk(-42)}" opacity="0.55"/>`,
+    truck: `<rect x="20" y="8" width="60" height="42" rx="8" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="24" y="52" width="52" height="40" rx="6" fill="${dk(-14)}" stroke="${ink}" stroke-width="3"/><rect x="30" y="14" width="40" height="16" rx="5" fill="${dk(-42)}" opacity="0.7"/>`,
+    snowplow: `<polygon points="8,84 92,84 78,58 22,58" fill="#cdd6df" stroke="${ink}" stroke-width="3"/><rect x="28" y="14" width="44" height="48" rx="8" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="34" y="20" width="32" height="14" rx="4" fill="${dk(-42)}" opacity="0.7"/>`,
+    wreck: `<rect x="24" y="14" width="52" height="72" rx="14" fill="${c1}" stroke="${ink}" stroke-width="3"/><path d="M30 30 L70 70 M70 30 L30 70" stroke="${ink}" stroke-width="3" opacity="0.6"/><path d="M40 22 L48 40 L40 48 L58 44 L52 60" stroke="#1a1d22" stroke-width="2" fill="none" opacity="0.7"/>`,
+    table: `<rect x="18" y="18" width="64" height="64" rx="8" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="18" y="18" width="64" height="64" rx="8" fill="none" stroke="${dk(-35)}" stroke-width="2" opacity="0.5"/>`,
+    chair: `<rect x="32" y="34" width="36" height="38" rx="6" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="32" y="24" width="36" height="11" rx="4" fill="${dk(-22)}"/>`,
+    bed: `<rect x="16" y="12" width="68" height="76" rx="8" fill="${c1}" stroke="${ink}" stroke-width="3"/><rect x="22" y="18" width="56" height="22" rx="6" fill="#e7e2ee" opacity="0.85"/>`,
+    counter: `<rect x="10" y="32" width="80" height="36" rx="6" fill="${c1}" stroke="${ink}" stroke-width="3"/><line x1="10" y1="50" x2="90" y2="50" stroke="${dk(-35)}" stroke-width="2" opacity="0.5"/>`,
+    shelf: `<rect x="22" y="14" width="56" height="72" rx="4" fill="${c1}" stroke="${ink}" stroke-width="3"/><line x1="22" y1="38" x2="78" y2="38" stroke="${ink}" stroke-width="2"/><line x1="22" y1="62" x2="78" y2="62" stroke="${ink}" stroke-width="2"/>`,
+    crate: `<rect x="20" y="20" width="60" height="60" rx="4" fill="${c1}" stroke="${ink}" stroke-width="3"/><path d="M20 20 L80 80 M80 20 L20 80" stroke="${ink}" stroke-width="3" opacity="0.5"/>`,
+    barrel: `<circle cx="50" cy="50" r="34" fill="${c1}" stroke="${ink}" stroke-width="3"/><circle cx="50" cy="50" r="22" fill="none" stroke="${ink}" stroke-width="2" opacity="0.5"/><circle cx="50" cy="50" r="10" fill="none" stroke="${ink}" stroke-width="2" opacity="0.4"/>`,
+    barricade: `<rect x="8" y="40" width="84" height="20" rx="3" fill="#d8c14a" stroke="${ink}" stroke-width="3"/><path d="M14 60 L30 40 M34 60 L50 40 M54 60 L70 40 M74 60 L90 40" stroke="${ink}" stroke-width="5" opacity="0.6"/>`,
+    door: `<rect x="42" y="12" width="14" height="76" fill="${c1}" stroke="${ink}" stroke-width="3"/><path d="M56 18 A52 52 0 0 1 86 72" fill="none" stroke="${ink}" stroke-width="2" stroke-dasharray="5 5" opacity="0.6"/>`,
+    campfire: `<path d="M50 14 Q68 40 56 60 Q72 52 64 34 Q84 56 66 80 Q40 92 32 64 Q28 46 44 42 Q40 60 52 62 Q38 38 50 14Z" fill="#ff7a3a" stroke="#b54a1a" stroke-width="2"/><path d="M50 40 Q58 52 52 66 Q44 56 50 40Z" fill="#ffd24a"/>`,
+    tree: `<circle cx="50" cy="44" r="32" fill="#4f7a4a" stroke="#2f4a2c" stroke-width="3"/><circle cx="40" cy="40" r="10" fill="#5f8a55" opacity="0.6"/><rect x="45" y="60" width="10" height="26" rx="2" fill="#6a4a2a"/>`,
+    rock: `<path d="M22 64 Q16 38 40 28 Q66 18 80 44 Q88 66 64 76 Q38 84 22 64Z" fill="${c1}" stroke="${ink}" stroke-width="3"/><path d="M40 40 L54 52 L46 62" stroke="${ink}" stroke-width="2" fill="none" opacity="0.5"/>`,
+    object: `<rect x="30" y="30" width="40" height="40" rx="6" transform="rotate(45 50 50)" fill="${c1}" stroke="${ink}" stroke-width="3"/>`,
+  };
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">${base}${G[kind] || G.object}</svg>`;
+}

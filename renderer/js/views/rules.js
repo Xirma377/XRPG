@@ -132,12 +132,20 @@ export async function render() {
 
   function renderBeast(b) {
     const wrapB = el('div');
+    // Full stat line for the living (Brawn / Agility / Wits / Charm | VIT | CMP | DEF).
+    if (b.stat) wrapB.appendChild(el('div.notice.mono', { style: { marginBottom: '8px' } }, b.stat));
     const stats = el('div.row.wrap.gap-2', { style: { marginBottom: '8px' } });
     if (b.defense) stats.appendChild(el('span.badge', 'Defense: ' + b.defense));
+    if (b.attack != null) stats.appendChild(el('span.badge', 'Attack: ' + b.attack));
+    if (b.damage) stats.appendChild(el('span.badge', 'Damage: ' + b.damage));
     if (b.body != null) stats.appendChild(el('span.badge', 'Body: ' + b.body));
+    else if (b.hp) stats.appendChild(el('span.badge', b.hp));
     if (b.speed) stats.appendChild(el('span.badge', 'Speed: ' + b.speed));
     wrapB.appendChild(stats);
-    if (b.bite) wrapB.appendChild(el('p.small', [el('b', 'Bite: '), b.bite]));
+    if (b.bite) wrapB.appendChild(el('p.small', [el('b', 'Attack / Bite: '), b.bite]));
+    if (b.drive) wrapB.appendChild(el('p.small', [el('b', 'Drive: '), b.drive]));
+    if (b.tactics) wrapB.appendChild(el('p.small', [el('b', 'Tactics: '), b.tactics]));
+    if (b.kill) wrapB.appendChild(el('p.small', [el('b', 'True kill: '), b.kill]));
     if (b.notes) wrapB.appendChild(el('p.prose', b.notes));
     return wrapB;
   }

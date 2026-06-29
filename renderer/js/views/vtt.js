@@ -5,12 +5,16 @@ import store from '../store.js';
 import appState from '../state.js';
 import shell from '../shell.js';
 import { VTT } from '../vtt-engine.js';
-import { mapSvg, svgToBase64, TOKEN_COLORS } from '../assets.js';
+import { mapSvg, svgToBase64, TOKEN_COLORS, OBJECTS, OBJECT_KINDS, objectSvg, svgToDataUrl } from '../assets.js';
 import { portraitNode } from '../portrait.js';
 import encounter from '../encounter.js';
+import { isSeed, hideDoc, visible } from '../seed.js';
+import { openPlayerDisplay, presenter } from '../presenter.js';
+import { exportDoc, importFromFile } from '../share.js';
 
 let engine = null;
 let unsub = [];
+let openAddObject = null; // set by render(); lets the module-level toolbar open the object palette
 
 export async function render() {
   shell.crumbs([{ label: 'Tabletop' }]);
@@ -40,6 +44,14 @@ export async function render() {
   const statusEl = el('div.vtt-status');
   stage.appendChild(statusEl);
 
+  // Built-in scenes are read-only presets — offer a one-click editable copy to play on.
+  if (scene && scene._seed && !window.__popout) {
+    const bn = el('div', { style: { position: 'absolute', top: '10px', left: '50%', transform: 'translateX(-50%)', zIndex: '5', display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 12px', background: 'color-mix(in srgb, var(--accent) 16%, var(--panel))', border: '1px solid var(--accent)', borderRadius: 'var(--r-2)', boxShadow: '0 6px 20px #0006' } });
+    bn.appendChild(el('span.small', '🔒 Built-in preset — read-only.'));
+    bn.appendChild(button('Copy to play', { size: 'sm', variant: 'primary', icon: 'copy', onClick: () => copyAndPlayScene(engine.scene) }));
+    stage.appendChild(bn);
+  }
+
   // sidebar
   const sidebar = el('div.vtt-sidebar');
   const sbHead = el('div.vtt-sb-head');
@@ -66,8 +78,12 @@ export async function render() {
   requestAnimationFrame(() => {
     engine = new VTT(canvas);
     engine.setScene(deepClone(scene));
+    openAddObject = addObjectMenu;
     buildToolbar(toolbar, scene, () => render());
-    unsub.push(engine.on('change', async (sc) => { await store.save('scenes', sc); }));
+    // ONLY the main window persists scene edits. A pop-out is a read-only mirror, so it
+    // never autosaves (otherwise two windows would last-writer-wins the same scene doc).
+    // Built-in scenes are read-only presets too: the GM works on a copy.
+    if (!window.__popout) unsub.push(engine.on('change', async (sc) => { if (sc && sc._seed) return; try { await store.save('scenes', sc); } catch (e) {} }));
     unsub.push(engine.on('select', (t) => { drawTokenList(sbBody); updateStatus(); }));
     unsub.push(engine.on('tool', () => { updateToolbarActive(toolbar); canvas.className = 'vtt-canvas tool-' + engine.tool; }));
     drawTokenList(sbBody);
@@ -76,9 +92,11 @@ export async function render() {
     const zl = setInterval(() => { if (!engine) { clearInterval(zl); return; } zlabel.textContent = Math.round(engine.view.scale * 100) + '%'; }, 200);
     unsub.push(() => clearInterval(zl));
 
-    // Player-display (pop-out) mode: read-only player view with live sync.
+    // Any pop-out of the tabletop is a READ-ONLY live mirror (GM view): no edit
+    // tools, no autosave — it just reflects the main window's scene, live. (The
+    // composed player-facing display is its own view; this path is the GM
+    // reference window on a second monitor.)
     if (window.__popout) {
-      engine.setPlayerView(true);
       engine.setTool('pan');
       toolbar.style.display = 'none';
       sidebar.classList.add('hidden');
@@ -86,8 +104,6 @@ export async function render() {
       unsub.push(store.on('change:scenes', (doc) => {
         if (doc && engine && engine.scene && doc.id === engine.scene.id) engine.setScene(deepClone(doc));
       }));
-      // follow GM scene switches
-      unsub.push(store.on('settings', () => {}));
     }
   });
 
@@ -120,10 +136,11 @@ export async function render() {
     // quick token
     const nameI = input({ placeholder: 'Token name' });
     let kind = 'npc';
-    const kindSeg = segmented(Object.keys(TOKEN_COLORS).map((k) => ({ value: k, label: k })), { value: kind, onChange: (v) => (kind = v) });
+    const kindSeg = segmented(Object.keys(TOKEN_COLORS).filter((k) => !OBJECT_KINDS.has(k)).map((k) => ({ value: k, label: k })), { value: kind, onChange: (v) => (kind = v) });
     body.appendChild(field('Quick token name', nameI));
     body.appendChild(field('Color', kindSeg));
     body.appendChild(button('Add quick token', { variant: 'primary', icon: 'plus', onClick: () => { engine.addToken({ name: nameI.value || 'Token', kind, color: TOKEN_COLORS[kind] }); drawTokenList(sbBody); m.close(); } }));
+    body.appendChild(button('Map objects (furniture, cars, terrain)…', { icon: 'cards', onClick: () => { m.close(); addObjectMenu(); } }));
     // from roster
     const sys = appState.system;
     const chars = store.where('characters', (c) => !sys || c.systemId === sys.id);
@@ -147,17 +164,45 @@ export async function render() {
     m.setBody(body);
   }
 
+  function addObjectMenu() {
+    const m = modal({ title: 'Add Map Object', width: 540 });
+    const body = el('div.col.gap-2');
+    body.appendChild(el('p.small.mute', 'Place furniture, vehicles, terrain and props. They sit beneath character tokens, move and snap like tokens, and can be rotated or resized (right-click). Larger items default to a bigger footprint.'));
+    let lastCat = null;
+    const grid = el('div', { style: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(96px, 1fr))', gap: '8px' } });
+    OBJECTS.forEach((o) => {
+      const pad = el('button.btn', { title: o.label, style: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '5px', padding: '10px 6px', height: 'auto' } });
+      const img = el('img', { src: svgToDataUrl(objectSvg(o.key)) }); img.style.width = '40px'; img.style.height = '40px';
+      pad.appendChild(img);
+      pad.appendChild(el('span.small', o.label));
+      pad.addEventListener('click', () => { engine.addToken({ kind: o.key, name: o.label, size: o.size, color: o.color }); drawTokenList(sbBody); toast(`Added ${o.label}`, { type: 'success', timeout: 700 }); m.close(); });
+      grid.appendChild(pad);
+    });
+    body.appendChild(grid);
+    m.setBody(body);
+  }
+
   function tokenContext(e, t) {
-    contextMenu([
-      { label: 'Rename…', icon: 'edit', onClick: async () => { const v = await promptText({ title: 'Token name', value: t.name }); if (v != null) { engine.updateToken(t.id, { name: v, label: v.slice(0, 2) }); drawTokenList(sbBody); } } },
-      { label: 'Size: Small', onClick: () => { engine.updateToken(t.id, { size: 0.7 }); } },
-      { label: 'Size: Medium', onClick: () => { engine.updateToken(t.id, { size: 1 }); } },
-      { label: 'Size: Large', onClick: () => { engine.updateToken(t.id, { size: 2 }); } },
-      { label: 'Size: Huge', onClick: () => { engine.updateToken(t.id, { size: 3 }); } },
-      '-',
-      ...(t.charId ? [{ label: 'Open character', icon: 'mask', onClick: () => shell.go('characters', t.charId) }] : []),
-      { label: 'Remove', icon: 'trash', danger: true, onClick: () => { engine.removeToken(t.id); drawTokenList(sbBody); } },
-    ], e.clientX, e.clientY);
+    const isObj = OBJECT_KINDS.has(t.kind);
+    const items = [
+      { label: 'Rename…', icon: 'edit', onClick: async () => { const v = await promptText({ title: isObj ? 'Object label' : 'Token name', value: t.name }); if (v != null) { engine.updateToken(t.id, { name: v, label: v.slice(0, 2) }); drawTokenList(sbBody); } } },
+    ];
+    if (isObj) {
+      items.push({ label: 'Rotate 90°', icon: 'refresh', onClick: () => { engine.updateToken(t.id, { rot: ((t.rot || 0) + 90) % 360 }); } });
+      items.push({ label: 'Size: 1×1', onClick: () => engine.updateToken(t.id, { size: 1 }) });
+      items.push({ label: 'Size: 2×2', onClick: () => engine.updateToken(t.id, { size: 2 }) });
+      items.push({ label: 'Size: 3×3', onClick: () => engine.updateToken(t.id, { size: 3 }) });
+      items.push({ label: 'Size: 4×4', onClick: () => engine.updateToken(t.id, { size: 4 }) });
+    } else {
+      items.push({ label: 'Size: Small', onClick: () => engine.updateToken(t.id, { size: 0.7 }) });
+      items.push({ label: 'Size: Medium', onClick: () => engine.updateToken(t.id, { size: 1 }) });
+      items.push({ label: 'Size: Large', onClick: () => engine.updateToken(t.id, { size: 2 }) });
+      items.push({ label: 'Size: Huge', onClick: () => engine.updateToken(t.id, { size: 3 }) });
+    }
+    items.push('-');
+    if (t.charId) items.push({ label: 'Open character', icon: 'mask', onClick: () => shell.go('characters', t.charId) });
+    items.push({ label: 'Remove', icon: 'trash', danger: true, onClick: () => { engine.removeToken(t.id); drawTokenList(sbBody); } });
+    contextMenu(items, e.clientX, e.clientY);
   }
 
   // expose token context on canvas right-click
@@ -177,6 +222,7 @@ function buildToolbar(toolbar, scene, rerender) {
     { id: 'pan', icon: 'menu', title: 'Pan' },
     { id: 'measure', icon: 'ruler', title: 'Measure' },
     { id: 'draw', icon: 'edit', title: 'Draw' },
+    { id: 'erase', icon: 'eraser', title: 'Erase drawings' },
     { id: 'ping', icon: 'pin', title: 'Ping' },
   ];
   tools.forEach((t) => {
@@ -200,9 +246,10 @@ function buildToolbar(toolbar, scene, rerender) {
   toolbar.appendChild(toolbarToggle('Player View', 'eye', false, (b) => { engine.playerView = !engine.playerView; b.classList.toggle('active', engine.playerView); }));
   toolbar.appendChild(el('div.sep'));
   toolbar.appendChild(button('Add Token', { size: 'sm', icon: 'plus', variant: 'primary', onClick: () => { const ev = document.querySelector('.vtt-sb-head .icon-btn'); if (ev) ev.click(); } }));
+  toolbar.appendChild(button('Add Object', { size: 'sm', icon: 'cards', title: 'Place furniture, vehicles, terrain', onClick: () => { if (openAddObject) openAddObject(); } }));
   // overflow menu
   toolbar.appendChild(el('div', { style: { flex: '1' } }));
-  toolbar.appendChild(button('Player Display', { size: 'sm', icon: 'eye', title: 'Open this scene in a separate window for players', onClick: () => window.xrpg.window.popout('vtt', 'player') }));
+  toolbar.appendChild(button('Show players', { size: 'sm', icon: 'eye', title: 'Show this scene on the Player Display', onClick: async () => { await presenter.showTabletop(engine.scene && engine.scene.id); openPlayerDisplay(); } }));
   toolbar.appendChild(button('Reveal All', { size: 'sm', onClick: () => engine.revealAll() }));
   toolbar.appendChild(button('Hide All', { size: 'sm', onClick: () => engine.hideAll() }));
   toolbar.appendChild(button('Clear Drawings', { size: 'sm', variant: 'ghost', onClick: () => engine.clearDrawings() }));
@@ -221,18 +268,43 @@ function updateToolbarActive(toolbar) {
   toolbar.querySelectorAll('.vtt-tool[data-tool]').forEach((b) => b.classList.toggle('active', b.dataset.tool === engine.tool));
 }
 
+async function copyAndPlayScene(scene) {
+  const camp = appState.activeCampaignId || null;
+  // Reuse an existing working copy of this preset for the current campaign, if any.
+  const existing = store.where('scenes', (s) => !s._seed && s.fromPreset === scene.id && (s.campaignId || null) === camp)[0];
+  let target = existing;
+  if (!target) {
+    const copy = deepClone(scene);
+    copy.id = uid('scene'); copy._seed = false; copy.fromPreset = scene.id; copy.campaignId = camp || copy.campaignId || null;
+    delete copy.createdAt; delete copy.updatedAt; delete copy._sig;
+    target = await store.save('scenes', copy);
+  }
+  await store.setSettings({ activeSceneId: target.id });
+  toast('Editable copy ready — play away', { type: 'success' });
+  render();
+}
+
 function scenesMenu(e, rerender) {
-  const scenes = store.all('scenes');
-  const items = scenes.map((s) => ({ label: (s.id === engine.scene.id ? '✓ ' : '') + s.name, icon: 'map', onClick: async () => { await store.setSettings({ activeSceneId: s.id }); rerender(); } }));
+  const scenes = visible(store.all('scenes'));
+  const active = engine.scene;
+  const items = scenes.map((s) => ({ label: (s.id === active.id ? '✓ ' : '') + s.name + (s._seed ? '  🔒' : ''), icon: 'map', onClick: async () => { await store.setSettings({ activeSceneId: s.id }); rerender(); } }));
   items.push('-');
   items.push({ label: 'New scene…', icon: 'plus', onClick: () => newScene(rerender) });
-  items.push({ label: 'Rename scene…', icon: 'edit', onClick: async () => { const v = await promptText({ title: 'Scene name', value: engine.scene.name }); if (v) { engine.scene.name = v; await store.save('scenes', engine.scene); rerender(); } } });
-  items.push({ label: 'Delete scene', icon: 'trash', danger: true, onClick: async () => { if (await confirm({ title: 'Delete scene?', message: `Delete "${engine.scene.name}"?`, danger: true })) { await store.remove('scenes', engine.scene.id); const remaining = store.all('scenes'); await store.setSettings({ activeSceneId: remaining[0] ? remaining[0].id : null }); rerender(); } } });
+  items.push({ label: 'Export scene', icon: 'download', onClick: () => exportDoc('scenes', active) });
+  items.push({ label: 'Import scene…', icon: 'upload', onClick: async () => { const created = await importFromFile(); if (created && created.length) { const sc = created.find((c) => c.collection === 'scenes'); if (sc) { await store.setSettings({ activeSceneId: sc.id }); rerender(); } } } });
+  if (isSeed(active)) {
+    items.push({ label: 'Copy this preset to play', icon: 'copy', onClick: () => copyAndPlayScene(active) });
+    items.push({ label: 'Hide built-in scene', icon: 'eyeOff', onClick: async () => { await hideDoc(active.id); const remaining = visible(store.all('scenes')); await store.setSettings({ activeSceneId: remaining[0] ? remaining[0].id : null }); rerender(); } });
+  } else {
+    items.push({ label: 'Rename scene…', icon: 'edit', onClick: async () => { const v = await promptText({ title: 'Scene name', value: active.name }); if (v) { active.name = v; await store.save('scenes', active); rerender(); } } });
+    items.push({ label: 'Delete scene', icon: 'trash', danger: true, onClick: async () => { if (await confirm({ title: 'Delete scene?', message: `Delete "${active.name}"?`, danger: true })) { await store.remove('scenes', active.id); const remaining = visible(store.all('scenes')); await store.setSettings({ activeSceneId: remaining[0] ? remaining[0].id : null }); rerender(); } } });
+  }
   const r = e.currentTarget.getBoundingClientRect();
   contextMenu(items, r.left - 150, r.bottom + 4);
 }
 
 function sceneSettings(rerender) {
+  if (engine.scene._seed) { toast('Built-in preset is read-only — make a copy to play first.', { type: 'warn' }); copyAndPlayScene(engine.scene); return; }
   const sc = engine.scene;
   const gridType = sc.grid ? sc.grid.type : 'square';
   const sizeI = input({ type: 'number', value: sc.grid ? sc.grid.size : 50 });
@@ -253,11 +325,12 @@ function sceneSettings(rerender) {
 }
 
 async function changeMap(rerender) {
+  if (engine.scene._seed) { toast('Built-in preset is read-only — make a copy to play first.', { type: 'warn' }); copyAndPlayScene(engine.scene); return; }
   const m = modal({ title: 'Change Map', width: 520 });
   const body = el('div.col.gap-4');
   body.appendChild(el('div.divider', 'Generated maps'));
   const grid = el('div.preset-grid');
-  [['grid', 'Blank Grid'], ['snow', 'Snowfield'], ['highway', 'I-17 Highway'], ['compound', 'Compound'], ['interior', 'Interior']].forEach(([kind, name]) => {
+  [['grid', 'Blank Grid'], ['snow', 'Snowfield'], ['highway', 'I-17 Highway'], ['rest_area', 'Rest Stop'], ['compound', 'Compound'], ['interior', 'Interior']].forEach(([kind, name]) => {
     const b = el('button.preset-btn'); b.appendChild(el('div.pn', name)); b.appendChild(el('div.pd', 'generated'));
     b.addEventListener('click', async () => { const svg = mapSvg(kind); const saved = await store.saveMediaBase64('maps', kind + '.svg', svgToBase64(svg)); engine.scene.mapMediaId = saved.id; engine.scene.mapDataUrl = null; engine.scene.w = 1200; engine.scene.h = 800; await store.save('scenes', engine.scene); m.close(); rerender(); });
     grid.appendChild(b);
@@ -270,7 +343,7 @@ async function changeMap(rerender) {
 async function newScene(rerender) {
   const nameI = input({ placeholder: 'Scene name', value: 'New Scene' });
   let mapKind = 'grid';
-  const mapSeg = segmented([['grid', 'Grid'], ['snow', 'Snow'], ['highway', 'Highway'], ['compound', 'Compound'], ['interior', 'Interior']].map(([v, l]) => ({ value: v, label: l })), { value: 'grid', onChange: (v) => (mapKind = v) });
+  const mapSeg = segmented([['grid', 'Grid'], ['snow', 'Snow'], ['highway', 'Highway'], ['rest_area', 'Rest Stop'], ['compound', 'Compound'], ['interior', 'Interior']].map(([v, l]) => ({ value: v, label: l })), { value: 'grid', onChange: (v) => (mapKind = v) });
   const m = modal({ title: 'New Scene', width: 460, body: [field('Name', nameI), field('Map', mapSeg)] });
   m.setFooter(
     button('Cancel', { variant: 'ghost', onClick: () => m.close() }),

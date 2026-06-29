@@ -7,6 +7,8 @@ import shell from '../shell.js';
 import router from '../router.js';
 import { applyTheme } from '../theme.js';
 import { objListEditor } from '../editors.js';
+import { visible, hiddenCount, isSeed, builtinChip, readOnlyBanner, copyToEdit, hideDoc, showAllBuiltins } from '../seed.js';
+import { exportSystemBundle, importFromFile } from '../share.js';
 
 export async function render(id) {
   if (id) return renderDetail(id);
@@ -20,10 +22,19 @@ async function renderList() {
     button('New System', { icon: 'plus', variant: 'primary', size: 'sm', onClick: createSystem }),
   ]);
 
-  const systems = store.all('rulesets');
+  const allSystems = store.all('rulesets');
+  const systems = visible(allSystems);
+  const nHidden = hiddenCount(allSystems);
   const wrap = el('div.view-pad');
   wrap.appendChild(el('p.dim', { style: { marginBottom: '18px' } },
-    'XRPG is system-agnostic. Each game system defines its own attributes, dice mechanic, derived stats, conditions, bestiary, and reference. Open one to view or fully edit it; switch the active system any time from the sidebar.'));
+    'XRPG is system-agnostic. Each game system defines its own attributes, dice mechanic, derived stats, conditions, bestiary, and reference. Built-in systems are read-only — open one to view it, or "Copy to Edit" to make your own editable version. Switch the active system any time from the sidebar.'));
+
+  if (nHidden) {
+    wrap.appendChild(el('div.row.gap-2', { style: { marginBottom: '12px' } }, [
+      el('span.small.mute', `${nHidden} built-in system${nHidden > 1 ? 's' : ''} hidden.`),
+      button('Show all built-ins', { size: 'sm', variant: 'ghost', onClick: async () => { await showAllBuiltins(); renderList(); } }),
+    ]));
+  }
 
   if (!systems.length) {
     wrap.appendChild(empty('No systems yet', { icon: 'layers', action: button('Create one', { variant: 'primary', onClick: createSystem }) }));
@@ -42,6 +53,7 @@ async function renderList() {
     ht.appendChild(el('div.ec-sub', sys.tagline || ''));
     head.appendChild(ht);
     if (sys.id === appState.activeSystemId) head.appendChild(badge('Active', { variant: 'solid' }));
+    else if (isSeed(sys)) head.appendChild(builtinChip());
     c.appendChild(head);
 
     c.appendChild(el('div.ec-body', sys.summary || ''));
@@ -58,8 +70,9 @@ async function renderList() {
     }
     foot.appendChild(button('Open', { size: 'sm', onClick: () => router.go('systems', sys.id) }));
     const actions = el('div.card-actions');
-    actions.appendChild(iconButton('copy', { title: 'Duplicate', size: 16, onClick: async (e) => { e.stopPropagation(); await duplicateSystem(sys); } }));
+    actions.appendChild(iconButton('copy', { title: isSeed(sys) ? 'Copy to Edit' : 'Duplicate', size: 16, onClick: async (e) => { e.stopPropagation(); isSeed(sys) ? await copyToEdit('rulesets', sys, { navigateView: 'systems' }) : await duplicateSystem(sys); } }));
     actions.appendChild(iconButton('download', { title: 'Export', size: 16, onClick: (e) => { e.stopPropagation(); exportSystem(sys); } }));
+    if (isSeed(sys)) actions.appendChild(iconButton('eyeOff', { title: 'Hide built-in', size: 16, onClick: async (e) => { e.stopPropagation(); await hideDoc(sys.id); toast(`${sys.name} hidden`, { type: 'success' }); renderList(); } }));
     foot.appendChild(actions);
     c.appendChild(foot);
     grid.appendChild(c);
@@ -72,12 +85,17 @@ async function renderDetail(id) {
   const sys = store.get('rulesets', id);
   if (!sys) { router.go('systems'); return; }
   shell.crumbs([{ label: 'Game Systems', to: 'systems' }, { label: sys.name }]);
-  shell.actions([
+  const actionBtns = [
     sys.id !== appState.activeSystemId ? button('Set Active', { icon: 'check', size: 'sm', variant: 'primary', onClick: async () => { await appState.setSystem(sys.id); toast(`${sys.name} active`, { type: 'success' }); renderDetail(id); } }) : badge('Active', { variant: 'solid' }),
-    button('Duplicate', { icon: 'copy', size: 'sm', onClick: () => duplicateSystem(sys) }),
+    isSeed(sys)
+      ? button('Copy to Edit', { icon: 'copy', size: 'sm', variant: 'primary', onClick: () => copyToEdit('rulesets', sys, { navigateView: 'systems' }) })
+      : button('Duplicate', { icon: 'copy', size: 'sm', onClick: () => duplicateSystem(sys) }),
     button('Export', { icon: 'download', size: 'sm', onClick: () => exportSystem(sys) }),
-    button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: () => deleteSystem(sys) }),
-  ]);
+    button('Share bundle', { icon: 'link', size: 'sm', title: 'Export this system with its characters in one file', onClick: () => exportSystemBundle(sys) }),
+  ];
+  if (isSeed(sys)) actionBtns.push(button('Hide', { icon: 'eyeOff', size: 'sm', onClick: async () => { await hideDoc(sys.id); toast(`${sys.name} hidden`, { type: 'success' }); router.go('systems'); } }));
+  actionBtns.push(button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: () => deleteSystem(sys) }));
+  shell.actions(actionBtns);
 
   const wrap = el('div.view-pad');
   const headRow = el('div.section-header');
@@ -85,18 +103,19 @@ async function renderDetail(id) {
   const swatch = el('div', { style: { width: '14px', height: '40px', borderRadius: '4px', background: (sys.theme && sys.theme.accent) || 'var(--accent)' } });
   t.appendChild(swatch);
   const ti = el('div');
-  ti.appendChild(el('h2', sys.name));
+  ti.appendChild(el('div.row.gap-2', [el('h2', { style: { margin: 0 } }, sys.name), isSeed(sys) ? builtinChip() : null].filter(Boolean)));
   ti.appendChild(el('div.small.mute', sys.tagline || ''));
   t.appendChild(ti);
   headRow.appendChild(t);
   wrap.appendChild(headRow);
 
+  const ro = isSeed(sys);
   const tabsEl = tabs([
     { key: 'overview', label: 'Overview', icon: 'info', render: () => buildOverview(sys) },
     { key: 'attrs', label: 'Attributes & Stats', icon: 'sliders', render: () => buildAttrs(sys) },
     { key: 'content', label: 'Content', icon: 'book', render: () => buildContent(sys) },
-    { key: 'edit', label: 'Edit System', icon: 'edit', render: () => buildEditor(sys) },
-    { key: 'advanced', label: 'Advanced (JSON)', icon: 'gear', render: () => buildAdvanced(sys) },
+    { key: 'edit', label: ro ? 'Edit (read-only)' : 'Edit System', icon: 'edit', render: () => ro ? readOnlyBanner('rulesets', sys, 'systems') : buildEditor(sys) },
+    { key: 'advanced', label: 'Advanced (JSON)', icon: 'gear', render: () => ro ? readOnlyBanner('rulesets', sys, 'systems') : buildAdvanced(sys) },
   ]);
   wrap.appendChild(tabsEl);
   shell.render(wrap);
@@ -413,15 +432,11 @@ async function exportSystem(sys) {
 }
 
 async function importSystem() {
-  const data = await window.xrpg.dialog.openJson();
-  if (!data) return;
-  let doc = null;
-  if (data.kind === 'xrpg-doc' && data.collection === 'rulesets') doc = data.doc;
-  else if (data.collection === 'rulesets' && Array.isArray(data.docs)) doc = data.docs[0];
-  else if (data.id && data.attributes) doc = data;
-  if (!doc) { toast('Not a valid system file', { type: 'error' }); return; }
-  doc.id = 'sys_' + uid('').slice(0, 8); doc._seed = false;
-  await store.save('rulesets', doc);
-  toast('System imported', { type: 'success' });
-  renderList();
+  // Handles a single system, a shareable bundle (system + characters), or a raw
+  // seed/system file — all land as editable copies with remapped references.
+  const created = await importFromFile();
+  if (created && created.length) {
+    const sys = created.find((c) => c.collection === 'rulesets');
+    if (sys) router.go('systems', sys.id); else renderList();
+  }
 }

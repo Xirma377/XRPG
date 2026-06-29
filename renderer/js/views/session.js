@@ -1,6 +1,6 @@
 import { el, clear, uid, deepClone, fmtClock, fmtDateTime, debounce } from '../util.js';
 import { icon } from '../icons.js';
-import { button, iconButton, empty, badge, chip, modal, confirm, toast, field, input, textarea, select, tabs, segmented, copyText } from '../ui.js';
+import { button, iconButton, empty, badge, chip, modal, confirm, toast, field, input, textarea, select, tabs, segmented, copyText, checkbox } from '../ui.js';
 import { setMarkdown } from '../markdown.js';
 import store from '../store.js';
 import appState from '../state.js';
@@ -12,8 +12,9 @@ import { Recorder } from '../recorder.js';
 import { generate, liveAvailable } from '../ai-client.js';
 import { resolveCheck } from '../dice.js';
 import { allDeriveds } from '../rules.js';
-import { renderSessionBlueprint } from '../storyrender.js';
+import { renderSessionBlueprint, renderReadAloud } from '../storyrender.js';
 import { startSession } from './campaigns.js';
+import presenter, { openPlayerDisplay } from '../presenter.js';
 import { portraitNode } from '../portrait.js';
 import { adjustReward, rewardStatOf, useItem } from '../progress.js';
 import discord from '../discord.js';
@@ -27,6 +28,7 @@ let elapsedTimer = null;
 let activeWorking = null;
 let openedAt = 0;
 let combatTabUnsub = null;
+let presenterTabUnsub = null;
 
 // Fold wall-clock time spent in the runner into the session's durationSec.
 function foldElapsed() {
@@ -52,12 +54,27 @@ export async function render(id) {
   const saveNotes = debounce(async () => { await store.save('sessions', working); }, 500);
   const saveNow = async () => { await store.save('sessions', working); };
 
+  // Per-session combat: restore this session's saved board (combatants, HP, turn,
+  // clocks) so the GM can stop mid-combat and resume exactly; otherwise adopt the
+  // current tracker as this session's starting state.
+  if (!window.__popout) {
+    // Each session owns its combat board. Restore this session's saved state, or
+    // start FRESH/empty for a session that has none — never inherit the global
+    // singleton's leftover board from a different session.
+    if (working.combatState) encounter.loadState(working.combatState);
+    else { encounter.reset(); working.combatState = encounter.serialize(); }
+    // The tabletop "preset" the GM set up for this session.
+    if (working.sceneId && store.get('scenes', working.sceneId)) store.setSettings({ activeSceneId: working.sceneId });
+    // Snapshot combat back into the session as it changes.
+    unsub.push(encounter.on('change', () => { if (activeWorking) { activeWorking.combatState = encounter.serialize(); saveNotes(); } }));
+  }
+
   // ----- header / actions -----
   const sessionTimer = el('span.mono', fmtClock(working.durationSec || 0));
   shell.actions([
     sessionTimer,
     button('Setup', { icon: 'spark', size: 'sm', title: 'Session setup wizard: Discord, player links, attendance, recording', onClick: () => openSessionWizard(working, campaign, saveNow) }),
-    button('Player Display', { icon: 'eye', size: 'sm', title: 'Open the tabletop in a separate window for players', onClick: () => window.xrpg.window.popout('vtt', 'player') }),
+    button('Player Display', { icon: 'eye', size: 'sm', title: 'Open the player-facing window (2nd monitor / screen-share)', onClick: () => openPlayerDisplay() }),
     button('Pop Mixer', { icon: 'music', size: 'sm', onClick: () => window.xrpg.window.popout('mixer', 'mixer') }),
     button('End Session', { icon: 'stop', size: 'sm', variant: 'danger', onClick: () => endSession(working, campaign) }),
   ]);
@@ -73,12 +90,15 @@ export async function render(id) {
 
   // ----- main tabs -----
   const blueprint = campaign && campaign.storyline && working.blueprintNumber != null ? (campaign.storyline.sessions || []).find((s) => s.number === working.blueprintNumber) : null;
+  const relinkBrief = async (num) => { working.blueprintNumber = num; await saveNow(); render(working.id); };
   main.appendChild(tabs([
-    { key: 'brief', label: 'Brief', icon: 'scroll', render: () => buildBrief(blueprint, campaign) },
+    { key: 'brief', label: 'Brief', icon: 'scroll', render: () => buildBrief(blueprint, campaign, relinkBrief) },
+    { key: 'locations', label: 'Locations', icon: 'compass', render: () => buildLocations(working, campaign, saveNow) },
     { key: 'log', label: 'Notes & Log', icon: 'edit', render: () => buildLog(working, saveNotes, saveNow) },
     { key: 'combat', label: 'Combat', icon: 'swords', render: () => buildCombat(sys, campaign) },
+    { key: 'player', label: 'Player Display', icon: 'eye', render: () => buildPresenter(working, campaign, sys) },
     { key: 'recap', label: 'Recap & Reflect', icon: 'spark', render: () => buildRecap(working, campaign, saveNow) },
-  ], { value: blueprint ? 'brief' : 'log' }));
+  ], { value: (blueprint || (campaign && campaign.storyline && (campaign.storyline.sessions || []).length)) ? 'brief' : 'log' }));
 
   // ----- side tools -----
   side.appendChild(buildParty(working, campaign, sys));
@@ -154,14 +174,241 @@ function launcher() {
 }
 
 // ---------- Brief ----------
-function buildBrief(blueprint, campaign) {
-  if (!blueprint) {
+function buildBrief(blueprint, campaign, onPick) {
+  if (blueprint) {
     const col = el('div.col.gap-4');
-    if (campaign && campaign.storyline && campaign.storyline.premise) { col.appendChild(el('h3', 'Premise')); col.appendChild(el('p.prose.selectable', campaign.storyline.premise)); }
-    col.appendChild(empty('No session brief', { icon: 'scroll', hint: 'This session isn\'t linked to a storyline blueprint. Use Notes & Log to capture play.' }));
+    if (onPick) {
+      const bar = el('div.row.between', { style: { gap: '10px' } });
+      bar.appendChild(el('span.small.mute', 'Brief linked from the storyline.'));
+      bar.appendChild(button('Change brief…', { size: 'sm', variant: 'ghost', icon: 'scroll', onClick: () => onPick(null) }));
+      col.appendChild(bar);
+    }
+    col.appendChild(renderSessionBlueprint(blueprint));
     return col;
   }
-  return renderSessionBlueprint(blueprint);
+  // No brief linked: let the GM pick one now (or keep improvising).
+  const col = el('div.col.gap-4');
+  if (campaign && campaign.storyline && campaign.storyline.premise) { col.appendChild(el('h3', 'Premise')); col.appendChild(el('p.prose.selectable', campaign.storyline.premise)); }
+  const sessions = ((campaign && campaign.storyline && campaign.storyline.sessions) || []).slice().sort((a, b) => (a.number || 0) - (b.number || 0));
+  if (sessions.length && onPick) {
+    const pickCard = el('div.side-card');
+    pickCard.appendChild(el('h4', 'Tie in a session brief'));
+    pickCard.appendChild(el('p.small.mute', 'Link this session to a storyline brief to load its read-aloud, beats, the key decision, and NPC fates.'));
+    const list = el('div.col.gap-2', { style: { marginTop: '8px' } });
+    sessions.forEach((sess) => {
+      const row = el('div.row.between', { style: { padding: '9px 11px', background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--r-1)' } });
+      const meta = el('div.grow');
+      meta.appendChild(el('div', { style: { fontWeight: 600 } }, `S${sess.number} — ${sess.title || 'Untitled'}`));
+      if (sess.subtitle) meta.appendChild(el('div.small.mute', sess.subtitle));
+      row.appendChild(meta);
+      row.appendChild(button('Use this brief', { size: 'sm', variant: 'primary', onClick: () => onPick(sess.number) }));
+      list.appendChild(row);
+    });
+    pickCard.appendChild(list);
+    col.appendChild(pickCard);
+  } else {
+    col.appendChild(empty('No session brief', { icon: 'scroll', hint: 'This session isn\'t linked to a storyline blueprint. Use Notes & Log to capture play.' }));
+  }
+  return col;
+}
+
+// ---------- Locations ----------
+// Per-campaign locations: full GM detail + read-aloud, and one-click "open the
+// tabletop" with the location's set-up scene (preset). Edits save to the campaign.
+function buildLocations(working, campaign, saveNow) {
+  const col = el('div.col.gap-4');
+  if (!campaign || !campaign.storyline) { col.appendChild(empty('No campaign storyline', { icon: 'compass', hint: 'This session has no linked storyline.' })); return col; }
+  const locs = campaign.storyline.locations = campaign.storyline.locations || [];
+  // Persist location edits to the campaign AND sync the current version snapshot so a
+  // later version restore/compare doesn't lose tabletop setup (locations aren't a
+  // narrative blueprint, so we don't fork a new version for them).
+  const saveCampaign = async () => {
+    const cv = (campaign.storylineVersions || []).find((v) => v.v === campaign.currentVersion);
+    if (cv && cv.content) cv.content.locations = deepClone(campaign.storyline.locations);
+    await store.save('campaigns', campaign);
+  };
+  const head = el('div.row.between');
+  head.appendChild(el('p.small.mute', { style: { margin: 0 } }, 'Open a location for its full detail and read-aloud, and jump to the tabletop with its set-up scene. Edits are saved to this campaign.'));
+  head.appendChild(button('Add location', { size: 'sm', icon: 'plus', onClick: () => { const loc = { name: 'New Location', tags: [], desc: '' }; locs.push(loc); saveCampaign().then(() => render(working.id)); } }));
+  col.appendChild(head);
+  if (!locs.length) { col.appendChild(empty('No locations', { icon: 'compass', hint: 'Add a location to set up its details and tabletop scene.' })); return col; }
+
+  locs.forEach((loc) => {
+    const cardEl = el('div.side-card');
+    const top = el('div.row.between');
+    const ht = el('div.grow');
+    ht.appendChild(el('h4', { style: { margin: 0 } }, loc.name || 'Location'));
+    if (loc.tags && loc.tags.length) { const tr = el('div.row.gap-1.wrap', { style: { marginTop: '4px' } }); loc.tags.forEach((t) => tr.appendChild(chip(t))); ht.appendChild(tr); }
+    top.appendChild(ht);
+    const sceneExists = loc.sceneId && store.get('scenes', loc.sceneId);
+    const acts = el('div.row.gap-1');
+    acts.appendChild(button(sceneExists ? 'Open Tabletop' : 'Set up scene', { size: 'sm', variant: 'primary', icon: 'map', onClick: () => openTabletopForLoc(loc) }));
+    if (sceneExists) acts.appendChild(button('Show players', { size: 'sm', icon: 'eye', title: 'Show this scene on the Player Display', onClick: async () => { working.sceneId = loc.sceneId; await saveNow(); await store.setSettings({ activeSceneId: loc.sceneId }); await presenter.showTabletop(loc.sceneId); openPlayerDisplay(); } }));
+    acts.appendChild(iconButton('edit', { title: 'Edit location', size: 15, onClick: () => editLoc(loc) }));
+    top.appendChild(acts);
+    cardEl.appendChild(top);
+    if (loc.desc) cardEl.appendChild(el('p.small.mute', { style: { marginTop: '6px' } }, loc.desc));
+    if (loc.details) { const d = el('div.prose.selectable', { style: { marginTop: '6px' } }); setMarkdown(d, loc.details); cardEl.appendChild(d); }
+    if (loc.readAloud) {
+      cardEl.appendChild(renderReadAloud(loc.readAloud));
+      cardEl.appendChild(button('Show read-aloud to players', { size: 'sm', variant: 'ghost', icon: 'eye', onClick: () => { presenter.pushReadAloud(loc.readAloud); openPlayerDisplay(); toast('Pushed to the player screen', { type: 'success', timeout: 900 }); } }));
+    }
+    if (loc.gmNotes) { const g = el('div', { style: { marginTop: '6px', padding: '8px 10px', background: 'var(--bg-1)', borderRadius: 'var(--r-1)', border: '1px solid var(--line-soft)' } }, [el('span.small', [el('b', 'GM notes: '), loc.gmNotes])]); cardEl.appendChild(g); }
+    if (loc.clocks && loc.clocks.length) {
+      const cl = el('div.row.gap-2.wrap', { style: { marginTop: '8px', alignItems: 'center' } });
+      cl.appendChild(el('span.small.mute', 'Clocks:'));
+      loc.clocks.forEach((c) => cl.appendChild(chip(`${c.name} (0/${c.size || 6})`, { icon: 'clock' })));
+      cl.appendChild(button('Add to tracker', { size: 'sm', icon: 'clock', onClick: () => { loc.clocks.forEach((c) => encounter.addClock(c.name, c.size || 6, c.color || null)); toast('Clocks added to the combat tracker', { type: 'success' }); } }));
+      cardEl.appendChild(cl);
+    }
+    col.appendChild(cardEl);
+  });
+  return col;
+
+  async function openTabletopForLoc(loc) {
+    let sceneId = loc.sceneId && store.get('scenes', loc.sceneId) ? loc.sceneId : null;
+    if (!sceneId) {
+      const scene = { id: uid('scene'), name: loc.name || 'Scene', campaignId: campaign.id, w: 1200, h: 800, mapKind: 'grid', grid: { type: 'square', size: 70, visible: true, snap: true }, tokens: [], fog: { enabled: false, revealed: ['ALL'] }, drawings: [], _seed: false };
+      await store.save('scenes', scene);
+      loc.sceneId = scene.id; await saveCampaign();
+      sceneId = scene.id;
+    }
+    working.sceneId = sceneId; await saveNow();
+    await store.setSettings({ activeSceneId: sceneId });
+    await presenter.showTabletop(sceneId); // player display follows to this scene
+    toast('Tabletop set to ' + (loc.name || 'scene'), { type: 'success' });
+    router.go('vtt');
+  }
+
+  function editLoc(loc) {
+    const nameI = input({ value: loc.name || '' });
+    const tagsI = input({ value: (loc.tags || []).join(', '), placeholder: 'comma,separated' });
+    const descI = textarea({ value: loc.desc || '', rows: 2, placeholder: 'One-line summary.' });
+    const detI = textarea({ value: loc.details || '', rows: 4, placeholder: 'Full GM detail — layout, hazards, what the players see (markdown).' });
+    const raI = textarea({ value: loc.readAloud || '', rows: 4, placeholder: 'Player-facing read-aloud / boxed text.' });
+    const gmI = textarea({ value: loc.gmNotes || '', rows: 3, placeholder: 'Private setup notes — token placement, the trap, clocks.' });
+    const camScenes = store.where('scenes', (s) => s.campaignId === campaign.id || !s.campaignId);
+    const sceneSel = select([{ value: '', label: '— none —' }].concat(camScenes.map((s) => ({ value: s.id, label: s.name + (s._seed ? ' (built-in)' : '') }))), { value: loc.sceneId || '' });
+    const m = modal({ title: 'Edit location', width: 640, body: [
+      field('Name', nameI), field('Tags', tagsI), field('Summary', descI),
+      field('Full details', detI), field('Read-aloud', raI), field('GM notes', gmI),
+      field('Tabletop scene (preset)', sceneSel),
+    ] });
+    m.setFooter(
+      button('Delete', { variant: 'danger', onClick: async () => { if (await confirm({ title: 'Delete location?', message: `Remove "${loc.name}" from this campaign?`, danger: true, okLabel: 'Delete' })) { campaign.storyline.locations = locs.filter((x) => x !== loc); await saveCampaign(); m.close(); render(working.id); } } }),
+      button('Cancel', { variant: 'ghost', onClick: () => m.close() }),
+      button('Save', { variant: 'primary', onClick: async () => { loc.name = nameI.value || 'Location'; loc.tags = tagsI.value.split(',').map((x) => x.trim()).filter(Boolean); loc.desc = descI.value; loc.details = detI.value; loc.readAloud = raI.value; loc.gmNotes = gmI.value; loc.sceneId = sceneSel.value || null; await saveCampaign(); m.close(); toast('Location saved', { type: 'success' }); render(working.id); } }),
+    );
+  }
+}
+
+// ---------- Player Display (Presenter controls) ----------
+// One place to control everything the players see, without leaving the runner.
+function buildPresenter(working, campaign, sys) {
+  const wrap = el('div.col.gap-4');
+  const section = (title, hint) => { const c = el('div.side-card'); c.appendChild(el('h4', { style: { margin: '0 0 8px' } }, title)); if (hint) c.appendChild(el('p.small.mute', { style: { marginTop: '-4px' } }, hint)); return c; };
+
+  function draw() {
+    clear(wrap);
+    const p = presenter.get();
+
+    const hdr = el('div.row.between', { style: { alignItems: 'flex-start' } });
+    hdr.appendChild(el('div', [el('h3', { style: { margin: 0 } }, 'Player Display'), el('div.small.mute', 'Everything the players see — on a second monitor or shared on Discord. You control it all from here.')]));
+    const live = p.push !== 'none' ? `Pushing ${p.push}` : (p.background === 'tabletop' ? 'Tabletop' : 'Idle card');
+    hdr.appendChild(el('div.row.gap-2', [badge(live, { variant: 'dim' }), button('Open Display', { variant: 'primary', icon: 'eye', onClick: () => openPlayerDisplay() })]));
+    wrap.appendChild(hdr);
+
+    // Background
+    const bg = section('Background');
+    bg.appendChild(segmented([{ value: 'idle', label: 'Idle card' }, { value: 'tabletop', label: 'Tabletop' }], { value: p.background, onChange: (v) => presenter.setBackground(v).then(draw) }));
+    if (p.background === 'tabletop') {
+      const sc = (p.sceneId && store.get('scenes', p.sceneId)) || (appState.settings.activeSceneId && store.get('scenes', appState.settings.activeSceneId));
+      bg.appendChild(el('p.small.mute', { style: { marginTop: '8px' } }, sc ? `Showing “${sc.name}”. Arrange it in the Tabletop or from a Location.` : 'No scene yet — open the Tabletop or a Location to set one up.'));
+      bg.appendChild(button('Open Tabletop', { size: 'sm', variant: 'ghost', icon: 'map', onClick: () => router.go('vtt') }));
+    } else {
+      const tI = input({ value: p.title || '', placeholder: (campaign && campaign.name) || (sys && sys.name) || 'Title' });
+      tI.addEventListener('change', () => presenter.setIdleCard(tI.value, p.sub));
+      bg.appendChild(field('Idle title (optional)', tI));
+    }
+    wrap.appendChild(bg);
+
+    // Overlays
+    const ov = section('Overlays', 'Shown over the background. Toggle live during play.');
+    [['initiative', 'Combat order'], ['clocks', 'Public clocks'], ['party', 'Party HUD']].forEach(([k, label]) => {
+      ov.appendChild(checkbox(label, { checked: !!p.overlays[k], onChange: (v) => presenter.setOverlay(k, v).then(draw) }));
+    });
+    wrap.appendChild(ov);
+
+    // Clocks (manage + which are public)
+    const clk = section('Clocks', 'Manage clocks and choose which the players can see.');
+    const clocks = encounter.state.clocks || [];
+    if (!clocks.length) clk.appendChild(el('p.small.mute', 'No clocks. Add a dramatic clock the table can race.'));
+    clocks.forEach((c) => {
+      const row = el('div.row.between', { style: { padding: '5px 0', borderBottom: '1px solid var(--line-soft)' } });
+      row.appendChild(el('span.small', `${c.name} (${c.filled}/${c.size})`));
+      const ctrl = el('div.row.gap-1', { style: { alignItems: 'center' } });
+      ctrl.appendChild(iconButton('minus', { size: 13, onClick: () => { encounter.tickClock(c.id, -1); draw(); } }));
+      ctrl.appendChild(iconButton('plus', { size: 13, onClick: () => { encounter.tickClock(c.id, 1); draw(); } }));
+      const pub = (p.publicClockIds || []).includes(c.id);
+      ctrl.appendChild(iconButton(pub ? 'eye' : 'eyeOff', { size: 14, title: pub ? 'Visible to players' : 'Hidden from players', onClick: () => presenter.setClockPublic(c.id, !pub).then(draw) }));
+      ctrl.appendChild(iconButton('trash', { size: 13, variant: 'danger', onClick: () => { encounter.removeClock(c.id); draw(); } }));
+      row.appendChild(ctrl);
+      clk.appendChild(row);
+    });
+    clk.appendChild(el('div', { style: { marginTop: '8px' } }, button('Add clock', { size: 'sm', icon: 'plus', onClick: () => addPresenterClock(draw) })));
+    wrap.appendChild(clk);
+
+    // Party reveal
+    const pcCard = section('Reveal player stats', 'Nothing shows until you reveal it. Per-character HP and status.');
+    const pcs = partyForCampaign(campaign, sys);
+    if (!pcs.length) pcCard.appendChild(el('p.small.mute', 'No player characters in this campaign’s group.'));
+    pcs.forEach((ch) => {
+      const row = el('div.row.between', { style: { padding: '5px 0' } });
+      const who = el('div.row.gap-2', { style: { alignItems: 'center' } });
+      who.appendChild(portraitNode(ch, 28, { round: true })); who.appendChild(el('span.small', ch.name));
+      row.appendChild(who);
+      const rv = p.party[ch.id] || {};
+      const ctrls = el('div.row.gap-3');
+      ctrls.appendChild(checkbox('HP', { checked: !!rv.hp, onChange: (v) => presenter.revealPc(ch.id, { hp: v }).then(draw) }));
+      ctrls.appendChild(checkbox('Status', { checked: !!rv.status, onChange: (v) => presenter.revealPc(ch.id, { status: v }).then(draw) }));
+      row.appendChild(ctrls);
+      pcCard.appendChild(row);
+    });
+    wrap.appendChild(pcCard);
+
+    // Push read-aloud / image
+    const push = section('Push to screen', 'Momentarily take over the whole player screen.');
+    const raI = textarea({ value: p.readaloud || '', rows: 3, placeholder: 'Read-aloud text to show full-screen…' });
+    push.appendChild(field('Read-aloud', raI));
+    const prow = el('div.row.gap-2.wrap');
+    prow.appendChild(button('Push read-aloud', { size: 'sm', icon: 'scroll', variant: 'primary', onClick: () => presenter.pushReadAloud(raI.value).then(draw) }));
+    prow.appendChild(button('Show image…', { size: 'sm', icon: 'map', onClick: async () => { const saved = await store.importMedia('handouts', [{ name: 'Image', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif'] }]); if (saved) { await presenter.pushImage(saved.id); draw(); } } }));
+    if (p.push !== 'none') prow.appendChild(button('Clear (back to background)', { size: 'sm', icon: 'x', onClick: () => presenter.clearPush().then(draw) }));
+    push.appendChild(prow);
+    if (p.push !== 'none') push.appendChild(el('p.small', { style: { color: 'var(--accent)', marginTop: '6px' } }, `Live: ${p.push === 'readaloud' ? 'read-aloud' : 'an image'} is on the player screen.`));
+    wrap.appendChild(push);
+  }
+
+  draw();
+  // Dedupe: the Player Display is a TAB and tabs re-render on every revisit, so
+  // clear our previous subscription before re-subscribing (avoid listener leaks).
+  if (presenterTabUnsub) presenterTabUnsub();
+  presenterTabUnsub = encounter.on('change', draw);
+  unsub.push(() => { if (presenterTabUnsub) { presenterTabUnsub(); presenterTabUnsub = null; } });
+  return wrap;
+}
+
+function addPresenterClock(after) {
+  const nameI = input({ placeholder: 'Clock name', value: '' });
+  const sizeI = input({ type: 'number', value: 6, min: 2, max: 12 });
+  const sys = appState.system;
+  const templates = (sys && sys.clockTemplates) || [];
+  const m = modal({ title: 'Add Clock', width: 420, body: [
+    field('Name', nameI), field('Segments', sizeI),
+    templates.length ? el('div', [el('div.small.mute', { style: { marginBottom: '6px' } }, 'Templates:'), el('div.row.gap-2.wrap', templates.map((t) => chip(t.name + ' (' + (t.size || 6) + ')', { onClick: () => { nameI.value = t.name; sizeI.value = t.size || 6; } })))]) : null,
+  ].filter(Boolean) });
+  m.setFooter(button('Cancel', { variant: 'ghost', onClick: () => m.close() }), button('Add', { variant: 'primary', onClick: () => { encounter.addClock(nameI.value || 'Clock', parseInt(sizeI.value, 10) || 6); m.close(); after && after(); } }));
+  setTimeout(() => nameI.focus(), 30);
 }
 
 // ---------- Notes & Log ----------
@@ -542,18 +789,21 @@ function buildPresence(working, sys, campaign, saveNow) {
 
 function buildClocks() {
   const card = el('div.side-card');
-  const h = el('div.row.between'); h.appendChild(el('h4', { style: { margin: 0 } }, 'Clocks')); h.appendChild(iconButton('plus', { size: 15, onClick: () => addClock() })); card.appendChild(h);
+  const h = el('div.row.between'); h.appendChild(el('h4', { style: { margin: 0 } }, 'Clocks')); h.appendChild(iconButton('plus', { size: 15, title: 'Add a clock', onClick: () => addPresenterClock(draw) })); card.appendChild(h);
   const box = el('div', { style: { marginTop: '8px' } });
   card.appendChild(box);
   function draw() {
     clear(box);
     if (!encounter.state.clocks.length) { box.appendChild(el('p.small.mute', 'No clocks running.')); return; }
+    const pub = new Set((presenter.get().publicClockIds) || []);
     encounter.state.clocks.forEach((clk) => {
       const row = el('div.row.between', { style: { padding: '4px 0' } });
       row.appendChild(el('span.small', `${clk.name} (${clk.filled}/${clk.size})`));
-      const ctrl = el('div.row.gap-1');
+      const ctrl = el('div.row.gap-1', { style: { alignItems: 'center' } });
       ctrl.appendChild(iconButton('minus', { size: 13, onClick: () => encounter.tickClock(clk.id, -1) }));
       ctrl.appendChild(iconButton('plus', { size: 13, onClick: () => encounter.tickClock(clk.id, 1) }));
+      ctrl.appendChild(iconButton(pub.has(clk.id) ? 'eye' : 'eyeOff', { size: 13, title: pub.has(clk.id) ? 'Visible to players' : 'Hidden from players', onClick: () => presenter.setClockPublic(clk.id, !pub.has(clk.id)).then(draw) }));
+      ctrl.appendChild(iconButton('trash', { size: 12, variant: 'danger', title: 'Remove clock', onClick: () => { encounter.removeClock(clk.id); draw(); } }));
       row.appendChild(ctrl);
       box.appendChild(row);
     });
@@ -561,7 +811,6 @@ function buildClocks() {
   draw();
   unsub.push(encounter.on('change', draw));
   card.appendChild(button('Open Combat Tracker', { size: 'sm', variant: 'ghost', icon: 'swords', onClick: () => router.go('combat') }));
-  function addClock() { const sys = appState.system; const n = (sys && sys.clockTemplates && sys.clockTemplates[0]) || { name: 'Clock', size: 6 }; encounter.addClock(n.name, n.size); }
   return card;
 }
 
@@ -877,6 +1126,7 @@ async function endSession(working, campaign) {
   try { await import('../discord-broadcast.js').then((b) => b.stopAppBroadcast()); } catch (e) {}
   if (rec && (rec.state === 'recording' || rec.state === 'paused')) { const blob = await rec.stop(); if (blob) { const saved = await rec.saveBlob(blob); working.audioMediaId = saved.id; working.transcript = rec.transcript || working.transcript; } }
   foldElapsed();
+  try { working.combatState = encounter.serialize(); } catch {}
   if (rec) rec.reset();
   await store.save('sessions', working);
   activeWorking = null; openedAt = 0;
@@ -896,6 +1146,7 @@ export async function teardown() {
   if (activeWorking) {
     foldElapsed();
     const w = activeWorking;
+    try { w.combatState = encounter.serialize(); } catch {}
     activeWorking = null; openedAt = 0;
     if (rec && rec.state !== 'recording' && rec.state !== 'paused') rec.reset();
     try { await store.save('sessions', w); } catch {}

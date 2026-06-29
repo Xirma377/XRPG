@@ -319,6 +319,15 @@ async function exportDoc(coll, docId) {
 }
 
 // ---- Seeding default content (systems, storyline, demos) ----
+// Content signature of a seed doc, ignoring volatile/marker fields. Lets us
+// detect when a shipped built-in changed (e.g. a new app version) so we can
+// refresh the read-only copy WITHOUT touching the user's own edited copies
+// (those are separate docs with _seed:false).
+function seedSig(doc) {
+  const { _seed, _sig, createdAt, updatedAt, ...rest } = doc;
+  return crypto.createHash('sha1').update(JSON.stringify(rest)).digest('hex').slice(0, 16);
+}
+
 async function seedDefaults() {
   let seedFiles = [];
   try { seedFiles = await fsp.readdir(SEED_DIR); } catch { return; }
@@ -338,10 +347,15 @@ async function seedDefaults() {
     if (!COLLECTIONS.includes(coll)) continue;
     for (const doc of payload.docs || []) {
       if (!doc.id) continue;
+      const sig = seedSig(doc);
       const existing = await get(coll, doc.id);
       if (!existing) {
-        // Tag as seed so we can offer "reset to default" without clobbering edits.
-        await put(coll, { ...doc, _seed: true });
+        // Tag as seed so it stays read-only and can be refreshed on update.
+        await put(coll, { ...doc, _seed: true, _sig: sig });
+      } else if (existing._seed && existing._sig !== sig) {
+        // Built-in content changed in a newer build: refresh the read-only copy.
+        // User copies (_seed:false, different ids) are never touched.
+        await put(coll, { ...doc, _seed: true, _sig: sig });
       }
     }
   }
@@ -360,7 +374,7 @@ async function reseed({ overwrite = false } = {}) {
     for (const doc of payload.docs || []) {
       if (!doc.id) continue;
       const existing = await get(coll, doc.id);
-      if (!existing || overwrite) await put(coll, { ...doc, _seed: true });
+      if (!existing || overwrite) await put(coll, { ...doc, _seed: true, _sig: seedSig(doc) });
     }
   }
   return true;

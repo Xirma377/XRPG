@@ -6,18 +6,435 @@
       "name": "I-17 Snow Trap",
       "campaignId": null,
       "mapKind": "highway",
-      "w": 1200, "h": 800,
-      "grid": { "type": "square", "size": 50, "visible": true, "snap": true, "color": "rgba(255,255,255,0.09)" },
+      "w": 1200,
+      "h": 800,
+      "grid": {
+        "type": "square",
+        "size": 50,
+        "visible": true,
+        "snap": true,
+        "color": "rgba(255,255,255,0.09)"
+      },
       "tokens": [
-        { "id": "tok_dana", "name": "Dana", "kind": "pc", "x": 575, "y": 425, "size": 1, "color": "#5bd0a0", "label": "Da", "charId": "pc_dana", "hp": { "cur": 15, "max": 15 }, "conditions": [] },
-        { "id": "tok_marcus", "name": "Marcus", "kind": "pc", "x": 625, "y": 425, "size": 1, "color": "#6fa8ff", "label": "Ma", "charId": "pc_marcus", "hp": { "cur": 18, "max": 18 }, "conditions": [] },
-        { "id": "tok_ellie", "name": "Ellie", "kind": "pc", "x": 575, "y": 475, "size": 1, "color": "#ff6b9d", "label": "El", "charId": "pc_ellie", "hp": { "cur": 17, "max": 17 }, "conditions": [] },
-        { "id": "tok_waker1", "name": "Waker", "kind": "threat", "x": 425, "y": 275, "size": 1, "color": "#ff7a6b", "label": "Wk", "conditions": ["Fast"] },
-        { "id": "tok_waker2", "name": "Waker", "kind": "threat", "x": 775, "y": 575, "size": 1, "color": "#ff7a6b", "label": "Wk", "conditions": [] }
+        {
+          "id": "tok_dana",
+          "name": "Dana",
+          "kind": "pc",
+          "x": 575,
+          "y": 425,
+          "size": 1,
+          "color": "#5bd0a0",
+          "label": "Da",
+          "charId": "pc_dana",
+          "hp": {
+            "cur": 15,
+            "max": 15
+          },
+          "conditions": []
+        },
+        {
+          "id": "tok_marcus",
+          "name": "Marcus",
+          "kind": "pc",
+          "x": 625,
+          "y": 425,
+          "size": 1,
+          "color": "#6fa8ff",
+          "label": "Ma",
+          "charId": "pc_marcus",
+          "hp": {
+            "cur": 18,
+            "max": 18
+          },
+          "conditions": []
+        },
+        {
+          "id": "tok_ellie",
+          "name": "Ellie",
+          "kind": "pc",
+          "x": 575,
+          "y": 475,
+          "size": 1,
+          "color": "#ff6b9d",
+          "label": "El",
+          "charId": "pc_ellie",
+          "hp": {
+            "cur": 17,
+            "max": 17
+          },
+          "conditions": []
+        },
+        {
+          "id": "tok_waker1",
+          "name": "Waker",
+          "kind": "threat",
+          "x": 425,
+          "y": 275,
+          "size": 1,
+          "color": "#ff7a6b",
+          "label": "Wk",
+          "conditions": [
+            "Fast"
+          ]
+        },
+        {
+          "id": "tok_waker2",
+          "name": "Waker",
+          "kind": "threat",
+          "x": 775,
+          "y": 575,
+          "size": 1,
+          "color": "#ff7a6b",
+          "label": "Wk",
+          "conditions": []
+        }
       ],
-      "fog": { "enabled": false, "revealed": [] },
+      "fog": {
+        "enabled": false,
+        "revealed": []
+      },
       "drawings": [],
       "_seed": true
+    },
+    {
+      "id": "scene_sunsetpoint",
+      "name": "Sunset Point Rest Area",
+      "campaignId": null,
+      "mapKind": "rest_area",
+      "w": 1200,
+      "h": 800,
+      "grid": {
+        "type": "square",
+        "size": 50,
+        "visible": true,
+        "snap": true,
+        "color": "rgba(255,255,255,0.09)"
+      },
+      "tokens": [
+        {
+          "id": "tok_sp1",
+          "size": 1,
+          "conditions": [],
+          "name": "Dana",
+          "kind": "pc",
+          "x": 560,
+          "y": 700,
+          "color": "#5bd0a0",
+          "label": "Da",
+          "charId": "pc_dana",
+          "hp": {
+            "cur": 15,
+            "max": 15
+          }
+        },
+        {
+          "id": "tok_sp2",
+          "size": 1,
+          "conditions": [],
+          "name": "Marcus",
+          "kind": "pc",
+          "x": 620,
+          "y": 720,
+          "color": "#6fa8ff",
+          "label": "Ma",
+          "charId": "pc_marcus",
+          "hp": {
+            "cur": 18,
+            "max": 18
+          }
+        },
+        {
+          "id": "tok_sp3",
+          "size": 1,
+          "conditions": [],
+          "name": "Ellie",
+          "kind": "pc",
+          "x": 600,
+          "y": 660,
+          "color": "#ff6b9d",
+          "label": "El",
+          "charId": "pc_ellie",
+          "hp": {
+            "cur": 17,
+            "max": 17
+          }
+        },
+        {
+          "id": "tok_sp4",
+          "size": 1,
+          "conditions": [],
+          "name": "Mac",
+          "kind": "npc",
+          "x": 320,
+          "y": 600,
+          "color": "#e8b04a",
+          "label": "Mc"
+        },
+        {
+          "id": "tok_sp5",
+          "size": 1,
+          "conditions": [],
+          "name": "Sarah",
+          "kind": "npc",
+          "x": 520,
+          "y": 190,
+          "color": "#c9a0ff",
+          "label": "Sa"
+        },
+        {
+          "id": "tok_sp6",
+          "size": 1,
+          "conditions": [
+            "Feverish"
+          ],
+          "name": "Leo",
+          "kind": "npc",
+          "x": 520,
+          "y": 230,
+          "color": "#c9a0ff",
+          "label": "Le"
+        },
+        {
+          "id": "tok_sp7",
+          "size": 1,
+          "conditions": [
+            "Bitten"
+          ],
+          "name": "Paramedic",
+          "kind": "npc",
+          "x": 700,
+          "y": 200,
+          "color": "#7fd1d6",
+          "label": "Pm"
+        },
+        {
+          "id": "tok_sp8",
+          "size": 1,
+          "conditions": [],
+          "name": "Marshal",
+          "kind": "npc",
+          "x": 600,
+          "y": 270,
+          "color": "#ff9d5a",
+          "label": "Mr"
+        },
+        {
+          "id": "tok_sp9",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 460,
+          "y": 140,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spa",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 560,
+          "y": 130,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spb",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 660,
+          "y": 140,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spc",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 730,
+          "y": 250,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spd",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 440,
+          "y": 250,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spe",
+          "size": 1,
+          "conditions": [],
+          "name": "Stranded",
+          "kind": "neutral",
+          "x": 640,
+          "y": 210,
+          "color": "#6f93b0",
+          "label": "St"
+        },
+        {
+          "id": "tok_spf",
+          "size": 1,
+          "conditions": [
+            "Very Slow"
+          ],
+          "name": "Cold-Stiff",
+          "kind": "threat",
+          "x": 1040,
+          "y": 760,
+          "color": "#9bb6c9",
+          "label": "CS"
+        },
+        {
+          "id": "tok_spg",
+          "kind": "truck",
+          "name": "Mac's rig",
+          "x": 300,
+          "y": 580,
+          "size": 3,
+          "rot": 90,
+          "conditions": [],
+          "color": "#6b7280"
+        },
+        {
+          "id": "tok_sph",
+          "kind": "car",
+          "name": "Car",
+          "x": 170,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spi",
+          "kind": "car",
+          "name": "Car",
+          "x": 300,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spj",
+          "kind": "car",
+          "name": "Car",
+          "x": 470,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spk",
+          "kind": "car",
+          "name": "Car",
+          "x": 730,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spl",
+          "kind": "car",
+          "name": "Car",
+          "x": 870,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spm",
+          "kind": "car",
+          "name": "Car",
+          "x": 1010,
+          "y": 480,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spn",
+          "kind": "car",
+          "name": "Car",
+          "x": 170,
+          "y": 620,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7d8aa0"
+        },
+        {
+          "id": "tok_spo",
+          "kind": "wreck",
+          "name": "Stalled wreck",
+          "x": 870,
+          "y": 640,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#5a5f66"
+        },
+        {
+          "id": "tok_spp",
+          "kind": "counter",
+          "name": "Info counter",
+          "x": 600,
+          "y": 130,
+          "size": 2,
+          "rot": 0,
+          "conditions": [],
+          "color": "#7a6a52"
+        },
+        {
+          "id": "tok_spq",
+          "kind": "barricade",
+          "name": "Jammed doors",
+          "x": 600,
+          "y": 300,
+          "size": 1,
+          "rot": 0,
+          "conditions": [],
+          "color": "#b9a94a"
+        },
+        {
+          "id": "tok_spr",
+          "kind": "campfire",
+          "name": "Heater",
+          "x": 430,
+          "y": 360,
+          "size": 1,
+          "rot": 0,
+          "conditions": [],
+          "color": "#ff7a3a"
+        }
+      ],
+      "fog": {
+        "enabled": false,
+        "revealed": []
+      },
+      "drawings": []
     }
   ]
 }

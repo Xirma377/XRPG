@@ -18,7 +18,21 @@ class Encounter extends Emitter {
     this.emit('change');
   }
 
-  persist() { this._save(); this.emit('change'); }
+  // Apply state pushed from ANOTHER window (no persist → no broadcast loop).
+  applyState(state) { if (!state) return; this.state = deepClone(state); this.emit('change'); }
+
+  persist() {
+    // Pop-out windows are read-only mirrors: re-render locally but DON'T persist/
+    // broadcast, so only the main window is the authority for combat state (no
+    // two-window last-writer-wins clobbering).
+    if (typeof window !== 'undefined' && window.__popout) { this.emit('change'); return; }
+    this._save(); this.emit('change');
+  }
+
+  // Per-session combat: snapshot / restore the whole tracker state so a session
+  // can stop mid-combat and resume the exact board (combatants, HP, turn, clocks).
+  serialize() { return deepClone(this.state); }
+  loadState(state) { if (!state) return; this.state = deepClone(state); this.persist(); }
 
   setMode(mode) { this.state.mode = mode; this.persist(); }
 

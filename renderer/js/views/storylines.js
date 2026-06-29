@@ -8,6 +8,8 @@ import shell from '../shell.js';
 import router from '../router.js';
 import { renderActs, renderWorld, renderTimeline, renderSessionBlueprint } from '../storyrender.js';
 import { startCampaignFromStoryline } from './campaigns.js';
+import { visible, hiddenCount, isSeed, builtinChip, readOnlyBanner, copyToEdit, hideDoc, showAllBuiltins } from '../seed.js';
+import { exportDoc, exportStorylineBundle, importFromFile } from '../share.js';
 
 export async function render(id) {
   if (id === 'new') return createStoryline();
@@ -25,7 +27,15 @@ async function renderList() {
   wrap.appendChild(el('p.dim', { style: { marginBottom: '18px' } },
     'A storyline is a reusable narrative blueprint — acts, sessions, locations, factions, and a timeline. Start a campaign from one to run it with a group of players.'));
 
-  const stories = store.all('storylines');
+  const allStories = store.all('storylines');
+  const stories = visible(allStories);
+  const nHidden = hiddenCount(allStories);
+  if (nHidden) {
+    wrap.appendChild(el('div.row.gap-2', { style: { marginBottom: '12px' } }, [
+      el('span.small.mute', `${nHidden} built-in storyline${nHidden > 1 ? 's' : ''} hidden.`),
+      button('Show all built-ins', { size: 'sm', variant: 'ghost', onClick: async () => { await showAllBuiltins(); renderList(); } }),
+    ]));
+  }
   if (!stories.length) { wrap.appendChild(empty('No storylines', { icon: 'scroll', hint: 'Create one, or generate a whole campaign in AI Studio.', action: button('New storyline', { variant: 'primary', onClick: createStoryline }) })); shell.render(wrap); return; }
 
   const grid = el('div.card-grid');
@@ -39,6 +49,7 @@ async function renderList() {
     av.appendChild(icon('scroll', 22, { stroke: '#fff' }));
     head.appendChild(av);
     const ht = el('div.grow'); ht.appendChild(el('div.ec-title', s.name)); ht.appendChild(el('div.ec-sub', s.subtitle || '')); head.appendChild(ht);
+    if (isSeed(s)) head.appendChild(builtinChip());
     c.appendChild(head);
     c.appendChild(el('div.ec-body', (s.premise || '').slice(0, 140) + ((s.premise || '').length > 140 ? '…' : '')));
     const tags = el('div.ec-tags');
@@ -50,7 +61,8 @@ async function renderList() {
     const foot = el('div.ec-foot');
     foot.appendChild(button('Start Campaign', { size: 'sm', variant: 'primary', icon: 'play', onClick: (e) => { e.stopPropagation(); startCampaignFromStoryline(s.id); } }));
     const actions = el('div.card-actions');
-    actions.appendChild(iconButton('copy', { title: 'Duplicate', size: 16, onClick: async (e) => { e.stopPropagation(); const copy = deepClone(s); copy.id = 'story_' + uid('').slice(0, 8); copy.name += ' (copy)'; copy._seed = false; delete copy.createdAt; delete copy.updatedAt; await store.save('storylines', copy); router.go('storylines', copy.id); } }));
+    actions.appendChild(iconButton('copy', { title: isSeed(s) ? 'Copy to Edit' : 'Duplicate', size: 16, onClick: async (e) => { e.stopPropagation(); if (isSeed(s)) { await copyToEdit('storylines', s, { navigateView: 'storylines' }); } else { const copy = deepClone(s); copy.id = 'story_' + uid('').slice(0, 8); copy.name += ' (copy)'; copy._seed = false; delete copy.createdAt; delete copy.updatedAt; await store.save('storylines', copy); router.go('storylines', copy.id); } } }));
+    if (isSeed(s)) actions.appendChild(iconButton('eyeOff', { title: 'Hide built-in', size: 16, onClick: async (e) => { e.stopPropagation(); await hideDoc(s.id); toast(`${s.name} hidden`, { type: 'success' }); renderList(); } }));
     foot.appendChild(actions);
     c.appendChild(foot);
     grid.appendChild(c);
@@ -64,17 +76,20 @@ async function renderDetail(id) {
   if (!s) { router.go('storylines'); return; }
   const sys = store.get('rulesets', s.systemId);
   shell.crumbs([{ label: 'Storylines', to: 'storylines' }, { label: s.name }]);
-  shell.actions([
-    button('Start Campaign', { icon: 'play', variant: 'primary', size: 'sm', onClick: () => startCampaignFromStoryline(s.id) }),
-    button('AI Author', { icon: 'spark', variant: 'cool', size: 'sm', onClick: () => router.go('ai', 'storyline', s.id) }),
-    button('Export', { icon: 'download', size: 'sm', onClick: () => exportStoryline(s) }),
-    button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: async () => { const camps = store.where('campaigns', (c) => c.storylineId === s.id).length; if (await confirm({ title: 'Delete storyline?', message: `Delete "${s.name}"?${camps ? ` ${camps} campaign(s) forked from it keep their own copy and are unaffected.` : ''}`, danger: true, okLabel: 'Delete' })) { await store.remove('storylines', s.id); toast('Deleted', { type: 'success' }); router.go('storylines'); } } }),
-  ]);
+  const seed = isSeed(s);
+  const acts = [button('Start Campaign', { icon: 'play', variant: 'primary', size: 'sm', onClick: () => startCampaignFromStoryline(s.id) })];
+  if (seed) acts.push(button('Copy to Edit', { icon: 'copy', size: 'sm', onClick: () => copyToEdit('storylines', s, { navigateView: 'storylines' }) }));
+  else acts.push(button('AI Author', { icon: 'spark', variant: 'cool', size: 'sm', onClick: () => router.go('ai', 'storyline', s.id) }));
+  acts.push(button('Export', { icon: 'download', size: 'sm', onClick: () => exportDoc('storylines', s) }));
+  acts.push(button('Share bundle', { icon: 'link', size: 'sm', title: 'Export this storyline with its system + NPCs in one file', onClick: () => exportStorylineBundle(s) }));
+  if (seed) acts.push(button('Hide', { icon: 'eyeOff', size: 'sm', onClick: async () => { await hideDoc(s.id); toast(`${s.name} hidden`, { type: 'success' }); router.go('storylines'); } }));
+  acts.push(button('Delete', { icon: 'trash', size: 'sm', variant: 'danger', onClick: async () => { const camps = store.where('campaigns', (c) => c.storylineId === s.id).length; if (await confirm({ title: 'Delete storyline?', message: `Delete "${s.name}"?${camps ? ` ${camps} campaign(s) forked from it keep their own copy and are unaffected.` : ''}${seed ? ' You can restore built-in content in Settings → Data.' : ''}`, danger: true, okLabel: 'Delete' })) { await store.remove('storylines', s.id); toast('Deleted', { type: 'success' }); router.go('storylines'); } } }));
+  shell.actions(acts);
 
   const wrap = el('div.view-pad');
   const headRow = el('div.section-header');
   const t = el('div.section-title'); t.appendChild(icon('scroll', 20));
-  const ti = el('div'); ti.appendChild(el('h2', s.name)); ti.appendChild(el('div.small.mute', s.subtitle || '')); t.appendChild(ti);
+  const ti = el('div'); ti.appendChild(el('div.row.gap-2', [el('h2', { style: { margin: 0 } }, s.name), seed ? builtinChip() : null].filter(Boolean))); ti.appendChild(el('div.small.mute', s.subtitle || '')); t.appendChild(ti);
   headRow.appendChild(t);
   if (sys) headRow.appendChild(badge(sys.name, { variant: 'dim' }));
   wrap.appendChild(headRow);
@@ -84,7 +99,7 @@ async function renderDetail(id) {
     { key: 'structure', label: 'Structure', icon: 'flag', render: () => renderActs(s, { onSession: (sess) => showSession(s, sess) }) },
     { key: 'world', label: 'World', icon: 'compass', render: () => renderWorld(s) },
     { key: 'timeline', label: 'Timeline', icon: 'clock', render: () => renderTimeline(s) },
-    { key: 'edit', label: 'Edit', icon: 'edit', render: () => buildStorylineEditor(s, () => renderDetail(id)) },
+    { key: 'edit', label: seed ? 'Edit (read-only)' : 'Edit', icon: 'edit', render: () => seed ? readOnlyBanner('storylines', s, 'storylines') : buildStorylineEditor(s, () => renderDetail(id)) },
   ]));
   shell.render(wrap);
 }
@@ -128,7 +143,13 @@ function buildStorylineEditor(s, rerender) {
     { key: 'meta', label: 'Premise', render: () => editStoryMeta(s, save) },
     { key: 'acts', label: 'Acts', render: () => sec('Acts', objListEditor({ items: s.acts, onChange: save, addLabel: 'Add act', itemTitle: (a) => a.title, defaults: () => ({ id: 'act' + (s.acts.length + 1) }), fields: [{ key: 'title', label: 'Title' }, { key: 'days', label: 'Days/When' }, { key: 'id', label: 'ID (for session links)' }, { key: 'summary', label: 'Summary', type: 'textarea', full: true }] })) },
     { key: 'sessions', label: 'Sessions', render: () => buildSessionsEditor(s, save, rerender) },
-    { key: 'locations', label: 'Locations', render: () => sec('Locations', objListEditor({ items: s.locations, onChange: save, addLabel: 'Add location', itemTitle: (l) => l.name, fields: [{ key: 'name', label: 'Name' }, { key: 'tags', label: 'Tags', type: 'tags' }, { key: 'desc', label: 'Description', type: 'textarea', full: true }] })) },
+    { key: 'locations', label: 'Locations', render: () => sec('Locations', objListEditor({ items: s.locations, onChange: save, addLabel: 'Add location', itemTitle: (l) => l.name, fields: [
+      { key: 'name', label: 'Name' }, { key: 'tags', label: 'Tags', type: 'tags' },
+      { key: 'desc', label: 'Summary', type: 'textarea', full: true },
+      { key: 'details', label: 'Full details (GM, markdown)', type: 'textarea', full: true, rows: 5 },
+      { key: 'readAloud', label: 'Read-aloud (player-facing)', type: 'textarea', full: true, rows: 4 },
+      { key: 'gmNotes', label: 'GM setup notes', type: 'textarea', full: true, rows: 3 },
+    ] })) },
     { key: 'factions', label: 'Factions', render: () => sec('Factions', objListEditor({ items: s.factions, onChange: save, addLabel: 'Add faction', itemTitle: (f) => f.name, fields: [{ key: 'name', label: 'Name' }, { key: 'leaderRef', label: 'Leader (NPC id)' }, { key: 'desc', label: 'Description', type: 'textarea', full: true }] })) },
     { key: 'timeline', label: 'Timeline', render: () => sec('Timeline', objListEditor({ items: s.timeline, onChange: save, addLabel: 'Add beat', itemTitle: (t) => t.when, fields: [{ key: 'when', label: 'When' }, { key: 'what', label: 'What happens', type: 'textarea', full: true }] })) },
   ]);
@@ -236,11 +257,12 @@ async function exportStoryline(s) {
 }
 
 async function importStoryline() {
-  const data = await window.xrpg.dialog.openJson();
-  if (!data) return;
-  let doc = (data.kind === 'xrpg-doc' && data.doc) || (Array.isArray(data.docs) && data.docs[0]) || (data.acts && data);
-  if (!doc) { toast('Not a valid storyline file', { type: 'error' }); return; }
-  doc.id = 'story_' + uid('').slice(0, 8); doc._seed = false;
-  await store.save('storylines', doc);
-  toast('Imported', { type: 'success' }); renderList();
+  // Handles a single storyline, a shareable bundle (storyline + system + NPCs),
+  // or a raw seed file — all land as editable copies with remapped references.
+  const created = await importFromFile();
+  if (created && created.length) {
+    const story = created.find((c) => c.collection === 'storylines');
+    renderList();
+    if (story) router.go('storylines', story.id);
+  }
 }

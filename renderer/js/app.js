@@ -9,6 +9,7 @@ import shell from './shell.js';
 import { toast, contextMenu, modal, button } from './ui.js';
 import updates from './updates.js';
 import { initDiscordBridge } from './discord-bridge.js';
+import { openPlayerDisplay } from './presenter.js';
 
 const NAV = [
   { section: 'Play' },
@@ -30,6 +31,22 @@ const NAV = [
   { section: 'Studio' },
   { view: 'ai', label: 'AI Studio', icon: 'spark' },
 ];
+
+// Player mode: a streamlined, player-first navigation. No GM tooling.
+const NAV_PLAYER = [
+  { section: 'Play' },
+  { view: 'dashboard', label: 'Home', icon: 'home' },
+  { view: 'characters', label: 'My Characters', icon: 'mask', countColl: 'characters' },
+  { view: 'dice', label: 'Dice', icon: 'dice' },
+  { section: 'Reference' },
+  { view: 'rules', label: 'Rules', icon: 'book' },
+];
+// Routes a Player is allowed to reach (everything else redirects to Home).
+const PLAYER_ROUTES = new Set(['dashboard', 'characters', 'dice', 'rules', 'settings']);
+
+function currentRole() { return (appState.settings && appState.settings.role) || 'gm'; }
+function isPlayer() { return currentRole() === 'player'; }
+function navList() { return isPlayer() ? NAV_PLAYER : NAV; }
 
 const ROUTES = {
   dashboard: () => import('./views/dashboard.js'),
@@ -66,7 +83,7 @@ function buildShell() {
   sidebar.appendChild(brand);
 
   const nav = el('nav.nav');
-  for (const item of NAV) {
+  for (const item of navList()) {
     if (item.section) { nav.appendChild(el('div.nav-section-label', item.section)); continue; }
     const n = el('div.nav-item', { 'data-view': item.view });
     n.appendChild(icon(item.icon, 18));
@@ -120,6 +137,28 @@ function buildShell() {
   gInput.addEventListener('focus', openPalette);
   globalSearch.appendChild(gInput);
   topbar.appendChild(globalSearch);
+
+  // Windows launcher: pop the current view or a reference view into its own window
+  // (second monitor), and open the player display.
+  const windowsBtn = el('button.icon-btn', { title: 'Open in a separate window' });
+  windowsBtn.appendChild(icon('cards', 18));
+  windowsBtn.addEventListener('click', () => {
+    const c = router.current || { view: 'dashboard', params: [] };
+    const cur = c.view + (c.params && c.params.length ? '/' + c.params.join('/') : '');
+    const ref = (route) => window.xrpg.window.popout(route, 'ref');
+    const r = windowsBtn.getBoundingClientRect();
+    contextMenu([
+      { label: 'Open Player Display', icon: 'eye', onClick: () => openPlayerDisplay() },
+      '-',
+      { label: 'Pop out current view', icon: 'cards', onClick: () => ref(cur) },
+      { label: 'Tabletop', icon: 'map', onClick: () => ref('vtt') },
+      { label: 'Combat Tracker', icon: 'swords', onClick: () => ref('combat') },
+      { label: 'Rules & Bestiary', icon: 'book', onClick: () => ref('rules') },
+      { label: 'Audio Mixer', icon: 'music', onClick: () => ref('mixer') },
+      { label: 'Dice', icon: 'dice', onClick: () => ref('dice') },
+    ], r.right - 200, r.bottom + 4);
+  });
+  if (!isPlayer()) topbar.appendChild(windowsBtn);
 
   const saveDot = el('div.save-dot', { id: 'saveDot', title: 'Saved' });
   saveDot.appendChild(icon('check', 13));
@@ -176,6 +215,8 @@ function setActiveNav(view) {
 
 let currentMod = null;
 async function mountView(view, params) {
+  // Player mode never reaches GM-only views (even via a stale hash / deep link).
+  if (!window.__popout && isPlayer() && !PLAYER_ROUTES.has(view)) { router.go('dashboard'); return; }
   // Tear down the outgoing view (cancels its timers/listeners/RAF/audio nodes).
   // Awaited so a view that persists on teardown (e.g. the session runner) lands
   // before the next view reads the store.
@@ -290,6 +331,31 @@ function wireGlobalKeys() {
   });
 }
 
+// First-run: pick a role so the app can tailor itself. Always resolves (even if
+// the welcome is dismissed — defaults to GM) so boot never hangs.
+function chooseRoleFirstRun() {
+  return new Promise((resolve) => {
+    let picked = null;
+    const make = (role, ic, title, desc) => {
+      const c = el('button', { type: 'button', style: { flex: '1', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', padding: '22px 16px', background: 'var(--bg-2)', border: '1px solid var(--line)', borderRadius: 'var(--r-2)', cursor: 'pointer', color: 'var(--text)', textAlign: 'center' } });
+      c.appendChild(icon(ic, 32));
+      c.appendChild(el('div', { style: { fontWeight: '700', fontSize: '16px' } }, title));
+      c.appendChild(el('div.small.mute', desc));
+      c.addEventListener('mouseenter', () => { c.style.borderColor = 'var(--accent)'; });
+      c.addEventListener('mouseleave', () => { c.style.borderColor = 'var(--line)'; });
+      c.addEventListener('click', async () => { picked = role; await appState.updateSettings({ role }); m.close(); });
+      return c;
+    };
+    const body = el('div.col.gap-4');
+    body.appendChild(el('p.dim', { style: { textAlign: 'center' } }, 'Welcome to XRPG — a local-first toolkit for tabletop RPGs. How will you be using it? You can switch any time in Settings.'));
+    body.appendChild(el('div.row.gap-4', [
+      make('gm', 'swords', 'Game Master', 'Run campaigns, the tabletop, audio, combat, the player display, and AI tools.'),
+      make('player', 'mask', 'Player', 'Build & play your character, roll dice, take notes — and export to share with your GM.'),
+    ]));
+    const m = modal({ title: 'Welcome to XRPG', width: 600, body, noEscape: true, noBackdropClose: true, onClose: () => { if (picked) resolve(picked); else appState.updateSettings({ role: 'gm' }).then(() => resolve('gm')); } });
+  });
+}
+
 async function boot() {
   try {
     await store.loadAll();
@@ -297,18 +363,43 @@ async function boot() {
     const { encounter } = await import('./encounter.js');
     await encounter.load();
 
-    // Pop-out mode: a secondary window showing one view full-bleed (player display).
+    // Keep this window live with the others: settings (presenter, encounter,
+    // active scene) are broadcast cross-window. Mirror them into appState +
+    // the encounter singleton so reference/player windows stay in sync.
+    if (window.xrpg.settings.onChanged) {
+      window.xrpg.settings.onChanged((s) => {
+        appState.settings = s;
+        if (s && s.encounter) encounter.applyState(s.encounter);
+      });
+    }
+
+    // Pop-out mode. 'player' = the composed Player Display (presenter-driven);
+    // any other mode = a GM reference window showing one route full-bleed.
     const popout = new URLSearchParams(location.search).get('popout');
     window.__popout = popout || null;
     if (popout) {
       document.body.classList.add('popout');
+      document.body.classList.add('popout-' + (popout === 'player' ? 'player' : 'ref'));
+      if (popout === 'player') {
+        const root = el('div', { id: 'view' });
+        document.body.appendChild(root);
+        const { renderPlayerDisplay } = await import('./views/player.js');
+        renderPlayerDisplay(root);
+        return;
+      }
+      // Reference window: mount the route carried in the hash (#/route), full-bleed.
       const view = el('div.view', { id: 'view', style: { height: '100vh' } });
       document.body.appendChild(view);
       shell.mount({ viewEl: view, crumbEl: el('div'), actionsEl: el('div'), appEl: document.body });
       router.on('navigate', (v, p) => mountView(v, p));
-      router.start('vtt');
+      router.start('dashboard');
       return;
     }
+
+    // First launch: ask whether this is a GM or a Player so we can tailor the app.
+    // (Skipped under dev-capture flags so automated screenshots don't block.)
+    const devCapture = new URLSearchParams(location.search).get('dev');
+    if (appState.settings.role === undefined && !devCapture) { await chooseRoleFirstRun(); }
 
     buildShell();
     wireGlobalKeys();
