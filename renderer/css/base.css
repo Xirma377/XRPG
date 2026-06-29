@@ -1,27 +1,30 @@
 /* XRPG — design system: neutral dark base, re-skinned per game system. */
 
 :root {
+  /* ── Cold Survival Terminal: deep cold slate, frost text, field-equipment feel ── */
   /* surfaces */
-  --bg:        #0b0e13;
-  --bg-1:      #11151c;
-  --bg-2:      #171c25;
-  --bg-3:      #1f2632;
-  --bg-4:      #283040;
-  --panel:     #11151c;
-  --line:      #283242;
-  --line-soft: #1c232e;
+  --bg:        #070a0f;
+  --bg-0:      #05080c;
+  --bg-1:      #0b1119;
+  --bg-2:      #111922;
+  --bg-3:      #19232f;
+  --bg-4:      #24303f;
+  --panel:     #0c131c;
+  --line:      #23303f;
+  --line-soft: #161f2a;
 
-  /* text */
-  --text:      #e6edf5;
-  --text-dim:  #aab6c6;
-  --text-mute: #6f7d90;
-  --text-faint:#46505f;
+  /* text — frost on cold slate */
+  --text:      #dde8f1;
+  --text-dim:  #9bacbe;
+  --text-mute: #647686;
+  --text-faint:#414d5b;
 
-  /* brand / system accent (overridden by theme.js) */
-  --accent:    #4ea3ff;
-  --accent-2:  #2b6fd6;
-  --accent-ink:#04101f;
-  --cool:      #7fd1d6;
+  /* brand / system accent (overridden by theme.js per system) — cold signal cyan */
+  --accent:    #5ba6c4;
+  --accent-2:  #3a829e;
+  --accent-ink:#04131b;
+  --btn-ink:   #ffffff; /* readable ink for the deepened primary-button fill (theme.js recomputes per accent) */
+  --cool:      #92bad6;
 
   /* semantic */
   --good:  #54c98a;
@@ -78,6 +81,24 @@ body {
 }
 
 ::selection { background: color-mix(in srgb, var(--accent) 40%, transparent); }
+
+/* ── Cold Survival Terminal texture: faint film grain + CRT scanlines + vignette.
+   Sits above app content but below modals/menus (8000+) so dialogs stay crisp. */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 7000;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 170px 170px; opacity: .035;
+}
+/* Edge vignette only — NO scanlines over content (they hurt button/text contrast). */
+body::after {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 7000;
+  background: radial-gradient(150% 130% at 50% 26%, transparent 52%, rgba(2,5,9,.6) 100%);
+}
+@media (prefers-reduced-motion: reduce) { body::before { display: none; } }
+/* Player display / reference pop-outs: drop grain + scanlines (keep a soft vignette)
+   so a shared map or screen-stream stays clean. */
+body.popout::before { display: none; }
+body.popout::after { background: radial-gradient(150% 130% at 50% 30%, transparent 56%, rgba(2,5,9,.5) 100%); }
 
 /* scrollbars */
 ::-webkit-scrollbar { width: 11px; height: 11px; }

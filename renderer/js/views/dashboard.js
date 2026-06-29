@@ -6,9 +6,12 @@ import appState from '../state.js';
 import shell from '../shell.js';
 import router from '../router.js';
 import { brandLogoSvg } from '../assets.js';
+import { openCreationWizard } from '../wizard.js';
+import { portraitNode } from '../portrait.js';
+import { statLine } from '../rules.js';
 
 export async function render() {
-  shell.crumbs([{ label: 'Dashboard' }]);
+  shell.crumbs([{ label: appState.settings.role === 'player' ? 'Home' : 'Dashboard' }]);
   shell.actions(null);
 
   const campaigns = store.all('campaigns');
@@ -18,6 +21,9 @@ export async function render() {
   const sys = appState.system;
 
   const wrap = el('div.view-pad');
+
+  // Player mode gets a character-first home instead of the GM console.
+  if ((appState.settings.role || 'gm') === 'player') { renderPlayerHome(wrap, characters, sys); shell.render(wrap); return; }
 
   // Hero
   const hero = el('div.hero');
@@ -169,4 +175,45 @@ export async function render() {
   wrap.appendChild(tools);
 
   shell.render(wrap);
+}
+
+// ---------- Player home ----------
+function renderPlayerHome(wrap, characters, sys) {
+  const createOne = () => openCreationWizard({ kind: 'pc', onDone: (c) => { if (c) router.go('characters', c.id); } });
+  shell.actions([button('Create a character', { variant: 'primary', icon: 'plus', onClick: createOne })]);
+
+  const hero = el('div.hero');
+  hero.appendChild(el('h1', 'Your Characters'));
+  hero.appendChild(el('p', sys
+    ? `Build, manage and play your ${sys.name} characters — roll straight from your sheet, keep notes, and export to share with your GM.`
+    : 'Build and play your characters — roll from your sheet, keep notes, and export to share with your GM.'));
+  const ha = el('div.hero-actions');
+  ha.appendChild(button('Create a character', { variant: 'primary', icon: 'plus', onClick: createOne }));
+  ha.appendChild(button('Roll Dice', { icon: 'dice', onClick: () => router.go('dice') }));
+  ha.appendChild(button('Rules', { icon: 'book', onClick: () => router.go('rules') }));
+  hero.appendChild(ha);
+  wrap.appendChild(hero);
+
+  const mine = characters.filter((c) => (c.kind || 'pc') === 'pc' && !c._seed);
+  wrap.appendChild(el('h3', { style: { margin: '24px 0 12px' } }, 'My Characters'));
+  if (!mine.length) {
+    wrap.appendChild(empty('No characters yet', { icon: 'mask', hint: 'Create your first character to start playing.', action: button('Create a character', { variant: 'primary', icon: 'plus', onClick: createOne }) }));
+    return;
+  }
+  const grid = el('div.card-grid');
+  mine.forEach((c) => {
+    const card = el('div.card.clickable'); card.addEventListener('click', () => router.go('characters', c.id));
+    const head = el('div.row.gap-4', { style: { alignItems: 'center' } });
+    head.appendChild(portraitNode(c, 48, { round: true }));
+    const hi = el('div.grow', { style: { minWidth: 0 } });
+    hi.appendChild(el('div', { style: { fontWeight: '700' } }, c.name || 'Unnamed'));
+    if (c.role) hi.appendChild(el('div.small.mute', c.role));
+    const csys = store.get('rulesets', c.systemId);
+    if (csys) hi.appendChild(el('div.tiny.mute', csys.name));
+    head.appendChild(hi);
+    card.appendChild(head);
+    if (csys && csys.attributes) card.appendChild(el('div.mono.small', { style: { marginTop: '10px', color: 'var(--text-dim)' } }, statLine(csys, c)));
+    grid.appendChild(card);
+  });
+  wrap.appendChild(grid);
 }

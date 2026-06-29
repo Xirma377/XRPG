@@ -128,11 +128,22 @@ export class VTT extends Emitter {
 
   _tokenRadius(t) { const g = this.scene.grid || { size: 50 }; return ((g.size || 50) * (t.size || 1)) / 2; }
 
-  hitToken(wx, wy) {
+  // All items under the cursor, ordered TOP → BOTTOM (matching render: character
+  // tokens sit above objects/scenery). Lets the UI cycle through overlaps.
+  hitStack(wx, wy) {
     const toks = this.scene.tokens || [];
-    for (let i = toks.length - 1; i >= 0; i--) { const t = toks[i]; const r = this._tokenRadius(t); const dx = wx - t.x, dy = wy - t.y; if (dx * dx + dy * dy <= r * r) return t; }
-    return null;
+    const objs = [], chars = [];
+    for (const t of toks) (this._isObject(t) ? objs : chars).push(t);
+    const order = chars.reverse().concat(objs.reverse()); // top-most first
+    return order.filter((t) => { const r = this._tokenRadius(t); const dx = wx - t.x, dy = wy - t.y; return dx * dx + dy * dy <= r * r; });
   }
+  hitToken(wx, wy) { return this.hitStack(wx, wy)[0] || null; }
+
+  // A token can be dragged unless it's individually locked, or it's scenery while
+  // "lock scenery" is on (so play doesn't accidentally shove cars/furniture around).
+  _isDraggable(t) { return !!t && !t.locked && !(this.scene && this.scene.lockObjects && this._isObject(t)); }
+  _isLocked(t) { return !!(t && (t.locked || (this.scene && this.scene.lockObjects && this._isObject(t)))); }
+  setLockObjects(v) { if (!this.scene) return; this.scene.lockObjects = !!v; this._save(); this.emit('lock', !!v); }
 
   snap(v) { const g = this.scene.grid || { size: 50 }; const size = g.size || 50; if (g.snap === false) return v; return Math.round(v / size) * size; }
 
@@ -167,9 +178,18 @@ export class VTT extends Emitter {
 
     if (this.tool === 'pan') { this._drag.mode = 'pan'; this.canvas.classList.add('panning'); return; }
     if (this.tool === 'select') {
-      const t = this.hitToken(w.x, w.y);
-      if (t) { this.selected = t.id; this._drag.mode = 'token'; this._drag.token = t; this._drag.ox = w.x - t.x; this._drag.oy = w.y - t.y; this.emit('select', t); }
-      else { this.selected = null; this._drag.mode = 'pan'; this.emit('select', null); }
+      const stack = this.hitStack(w.x, w.y);
+      if (stack.length) {
+        let t = stack[0];
+        // Clicking the same spot again cycles down through overlapping items, so a
+        // car beneath a player token is reachable without moving the player.
+        const near = this._lastPick && Math.hypot(w.x - this._lastPick.x, w.y - this._lastPick.y) < this._tokenRadius(t) * 0.85;
+        if (near && this.selected && stack.length > 1) { const i = stack.findIndex((s) => s.id === this.selected); t = stack[(i + 1) % stack.length]; }
+        this._lastPick = { x: w.x, y: w.y };
+        this.selected = t.id; this.emit('select', t);
+        if (this._isDraggable(t)) { this._drag.mode = 'token'; this._drag.token = t; this._drag.ox = w.x - t.x; this._drag.oy = w.y - t.y; }
+        else { this._drag.mode = 'pan'; } // locked: select (for context menu) but don't move
+      } else { this.selected = null; this._drag.mode = 'pan'; this.emit('select', null); }
       return;
     }
     if (this.tool === 'measure') { this.measure = { x1: w.x, y1: w.y, x2: w.x, y2: w.y }; this._drag.mode = 'measure'; return; }
@@ -342,6 +362,7 @@ export class VTT extends Emitter {
     if (img) ctx.drawImage(img, -r, -r, s, s);
     else { ctx.fillStyle = t.color || '#c0986f'; ctx.fillRect(-r, -r, s, s); }
     if (this.selected === t.id) { ctx.lineWidth = 3 / this.view.scale; ctx.strokeStyle = '#ffd24a'; ctx.strokeRect(-r, -r, s, s); }
+    else if (this._isLocked(t)) { ctx.lineWidth = 1.5 / this.view.scale; ctx.strokeStyle = 'rgba(150,170,190,0.6)'; ctx.setLineDash([4 / this.view.scale, 3 / this.view.scale]); ctx.strokeRect(-r, -r, s, s); ctx.setLineDash([]); }
     ctx.restore();
     // label only when selected (objects are usually self-evident; keeps the map clean)
     if (this.selected === t.id && t.name) {

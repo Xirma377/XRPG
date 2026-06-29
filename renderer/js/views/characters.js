@@ -6,10 +6,12 @@ import appState from '../state.js';
 import shell from '../shell.js';
 import router from '../router.js';
 import { blankCharacter, allDeriveds, statLine, validateCreation } from '../rules.js';
+import { resolveCheck, logRoll } from '../dice.js';
 import { portraitNode } from '../portrait.js';
 import { addItem, updateItem, useItem, loseItem, removeItem, adjustReward, rewardStatOf, ensureProgress } from '../progress.js';
 import { visible, isSeed, builtinChip, copyToEdit, hideDoc } from '../seed.js';
 import { importFromFile } from '../share.js';
+import { openCreationWizard } from '../wizard.js';
 
 export async function render(id, sub) {
   if (id === 'new') return openCreate();
@@ -24,7 +26,7 @@ async function renderList() {
   shell.actions([
     button('Import', { icon: 'upload', size: 'sm', onClick: async () => { const created = await importFromFile(); if (created && created.length) { const ch = created.find((c) => c.collection === 'characters'); if (ch) router.go('characters', ch.id); } } }),
     button('New NPC', { icon: 'npc', size: 'sm', onClick: () => openCreate('npc') }),
-    button('New PC', { icon: 'plus', variant: 'primary', size: 'sm', onClick: () => openCreate('pc') }),
+    button('New PC', { icon: 'plus', variant: 'primary', size: 'sm', onClick: () => openCreationWizard({ kind: 'pc', onDone: (c) => { if (c) router.go('characters', c.id); } }) }),
   ]);
 
   const wrap = el('div.view-pad');
@@ -52,7 +54,7 @@ async function renderList() {
     chars.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 
     if (!chars.length) {
-      grid.appendChild(empty('No characters', { icon: 'mask', hint: 'Create a player character or an NPC.', action: button('New character', { variant: 'primary', onClick: () => openCreate('pc') }) }));
+      grid.appendChild(empty('No characters', { icon: 'mask', hint: 'Create a player character or an NPC.', action: button('Create a character', { variant: 'primary', icon: 'plus', onClick: () => openCreationWizard({ kind: 'pc', onDone: (c) => { if (c) router.go('characters', c.id); } }) }) }));
       return;
     }
     for (const c of chars) grid.appendChild(charCard(c));
@@ -248,6 +250,9 @@ async function renderDetail(id) {
       attrCard.appendChild(status);
     }
     main.appendChild(attrCard);
+
+    // Quick Rolls — roll this character's checks straight from the sheet.
+    main.appendChild(buildQuickRolls(sys, working));
   }
 
   // NPC quick stat block (freeform)
@@ -397,6 +402,57 @@ function portraitMenu(c, done) {
     button('Regenerate', { icon: 'refresh', onClick: () => { c.portrait = null; c.portraitSeed = uid('seed'); m.close(); done(); } }),
     button('Done', { variant: 'primary', onClick: () => { m.close(); done(); } }),
   );
+}
+
+// ---------- Quick Rolls (play from the sheet) ----------
+function buildQuickRolls(sys, working) {
+  const card = el('div.card');
+  card.appendChild(el('h3', { style: { marginBottom: '10px' } }, 'Quick Rolls'));
+  const result = el('div', { style: { display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 14px', background: 'var(--bg-1)', border: '1px solid var(--line-soft)', borderRadius: 'var(--r-2)', marginBottom: '12px', minHeight: '56px' } });
+  const big = el('div', { style: { fontFamily: 'var(--font-display)', fontSize: '30px', fontWeight: '700', lineHeight: '1', minWidth: '46px', textAlign: 'center' } }, '—');
+  const meta = el('div'); const outEl = el('div', { style: { fontWeight: '700' } }, 'Roll a check'); const subEl = el('div.small.mute', ''); meta.appendChild(outEl); meta.appendChild(subEl);
+  result.appendChild(big); result.appendChild(meta);
+  card.appendChild(result);
+
+  function show(r, label) {
+    const dice = (r.dice || []).join(' + ');
+    big.textContent = String(r.total);
+    let out = label || 'Rolled', color = 'var(--text)';
+    if (r.kind === 'roll-under') {
+      out = r.critSuccess ? 'CRIT SUCCESS' : r.critFail ? 'CRIT FAIL' : r.cleanHit ? 'CLEAN HIT' : (r.success ? 'SUCCESS' : 'FAILURE');
+      color = r.success ? 'var(--good)' : 'var(--bad)';
+      subEl.textContent = `${label} · ${dice} = ${r.total} vs ${r.target}` + (r.cleanHit ? ' (+clean hit)' : '');
+    } else if (r.kind === 'roll-high') {
+      out = r.target != null ? (r.success ? 'HIT' : 'MISS') : (label || 'Rolled');
+      color = r.success == null ? 'var(--text)' : (r.success ? 'var(--good)' : 'var(--bad)');
+      subEl.textContent = `${label} · ${dice}${r.mod ? ` ${r.mod >= 0 ? '+' : ''}${r.mod}` : ''} = ${r.total}`;
+    } else {
+      out = r.summary || label || 'Rolled';
+      subEl.textContent = `${label} · ${dice} = ${r.total}`;
+    }
+    outEl.textContent = out; big.style.color = color; outEl.style.color = color;
+  }
+
+  const rolls = (sys.rollPresets && sys.rollPresets.length) ? sys.rollPresets : (sys.attributes || []).map((a) => ({ name: a.name + ' check', attr: a.key, ease: 'Average' }));
+  const grid = el('div.row.wrap.gap-2');
+  rolls.forEach((p) => grid.appendChild(button(p.name, { size: 'sm', onClick: () => { const r = rollForCharacter(sys, working, p); show(r, p.name); try { logRoll({ label: `${working.name || 'PC'}: ${p.name}`, total: r.total, success: r.success, at: Date.now(), by: working.name }); } catch (e) {} } })));
+  card.appendChild(grid);
+  card.appendChild(el('p.tiny.faint', { style: { marginTop: '8px' } }, 'Rolls use this character’s current attributes. Open the Dice roller for full options.'));
+  return card;
+}
+
+function rollForCharacter(sys, char, spec) {
+  const res = (sys.dice && sys.dice.resolution) || 'flat';
+  // A preset's `attr` may be a base attribute OR a derived (e.g. D&D's str_mod,
+  // PF2e's perception) — resolve through deriveds like the Dice view does, or
+  // every D&D/PF2e quick-roll would be a flat 1d20+0.
+  const der = allDeriveds(sys, char);
+  const attrVal = spec.attr ? ((char.attrs && char.attrs[spec.attr] != null) ? Number(char.attrs[spec.attr]) : Number(der[spec.attr] ?? 0)) : 0;
+  const easeMod = (spec.ease && (sys.easeLadder || []).length) ? (((sys.easeLadder || []).find((e) => e.name === spec.ease) || {}).mod || 0) : 0;
+  if (res === 'roll-under' || res === 'percentile') return resolveCheck(sys, { target: attrVal + easeMod });
+  // roll-high / degrees: carry the preset's intended difficulty from the DC ladder.
+  const dc = (spec.ease && (sys.dcLadder || []).length) ? (((sys.dcLadder || []).find((d) => d.name === spec.ease) || {}).dc) : undefined;
+  return resolveCheck(sys, { mod: attrVal, target: dc });
 }
 
 // ---------- Inventory ----------

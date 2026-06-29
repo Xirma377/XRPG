@@ -186,6 +186,7 @@ export async function render() {
     const isObj = OBJECT_KINDS.has(t.kind);
     const items = [
       { label: 'Rename…', icon: 'edit', onClick: async () => { const v = await promptText({ title: isObj ? 'Object label' : 'Token name', value: t.name }); if (v != null) { engine.updateToken(t.id, { name: v, label: v.slice(0, 2) }); drawTokenList(sbBody); } } },
+      { label: t.locked ? 'Unlock' : 'Lock in place', icon: 'lock', onClick: () => { engine.updateToken(t.id, { locked: !t.locked }); drawTokenList(sbBody); } },
     ];
     if (isObj) {
       items.push({ label: 'Rotate 90°', icon: 'refresh', onClick: () => { engine.updateToken(t.id, { rot: ((t.rot || 0) + 90) % 360 }); } });
@@ -243,6 +244,7 @@ function buildToolbar(toolbar, scene, rerender) {
   // toggles
   toolbar.appendChild(toolbarToggle('Grid', 'grid', scene.grid && scene.grid.visible !== false, () => { engine.scene.grid.visible = !(engine.scene.grid.visible !== false); engine._save(); }));
   toolbar.appendChild(toolbarToggle('Fog', 'eyeOff', scene.fog && scene.fog.enabled, () => { engine.toggleFog(); }));
+  toolbar.appendChild(toolbarToggle('Lock scenery', 'lock', !!scene.lockObjects, () => { engine.setLockObjects(!engine.scene.lockObjects); }));
   toolbar.appendChild(toolbarToggle('Player View', 'eye', false, (b) => { engine.playerView = !engine.playerView; b.classList.toggle('active', engine.playerView); }));
   toolbar.appendChild(el('div.sep'));
   toolbar.appendChild(button('Add Token', { size: 'sm', icon: 'plus', variant: 'primary', onClick: () => { const ev = document.querySelector('.vtt-sb-head .icon-btn'); if (ev) ev.click(); } }));

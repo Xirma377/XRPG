@@ -75,7 +75,7 @@ export function renderPlayerDisplay(root) {
       bar.appendChild(el('div', { style: { fontSize: '12px', textTransform: 'uppercase', letterSpacing: '.08em', color: 'var(--ice,#92bad6)', marginRight: '4px' } }, 'Round ' + (e.round || 1)));
       (e.combatants || []).forEach((c, i) => {
         const active = i === e.turnIndex;
-        const pill = el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '999px', background: active ? 'var(--accent,#4ea3ff)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--accent-ink,#06080b)' : 'var(--frost,#e4eef5)', fontWeight: active ? '700' : '500', border: '1px solid ' + (active ? 'transparent' : 'rgba(255,255,255,0.08)') } });
+        const pill = el('div', { style: { display: 'flex', alignItems: 'center', gap: '6px', padding: '5px 10px', borderRadius: '999px', background: active ? 'color-mix(in srgb, var(--accent,#4ea3ff) 70%, #0a0e13)' : 'rgba(255,255,255,0.06)', color: active ? 'var(--btn-ink,#fff)' : 'var(--frost,#e4eef5)', fontWeight: active ? '700' : '500', border: '1px solid ' + (active ? 'color-mix(in srgb, var(--accent,#4ea3ff) 50%, #000)' : 'rgba(255,255,255,0.08)') } });
         pill.appendChild(el('span', { style: { width: '10px', height: '10px', borderRadius: '50%', background: c.color || kindColor(c.kind) } }));
         pill.appendChild(el('span', c.name));
         bar.appendChild(pill);

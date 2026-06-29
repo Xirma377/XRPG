@@ -11,8 +11,16 @@
 .btn:active { transform: translateY(1px); }
 .btn:disabled { opacity: .45; pointer-events: none; }
 .btn .icon { flex: none; }
-.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; font-weight: 600; }
-.btn-primary:hover { background: color-mix(in srgb, var(--accent) 88%, white); }
+/* Primary: a flat DEEPENED accent fill + a contrast-aware ink (--btn-ink, set in
+   theme.js) so text clears WCAG AA for ANY accent — neon ember red AND the
+   mid-luminance cyan/blue defaults. A flat fill keeps contrast uniform. */
+.btn-primary {
+  background: color-mix(in srgb, var(--accent) 66%, #0a0e13);
+  color: var(--btn-ink, #fff);
+  border: 1px solid color-mix(in srgb, var(--accent) 42%, #000);
+  font-weight: 700;
+}
+.btn-primary:hover { background: color-mix(in srgb, var(--accent) 70%, #0a0e13); border-color: color-mix(in srgb, var(--accent) 58%, #000); }
 .btn-danger { background: var(--bad-2); color: #fff; border-color: transparent; }
 .btn-danger:hover { background: var(--bad); }
 .btn-ghost { background: transparent; border-color: transparent; color: var(--text-dim); }

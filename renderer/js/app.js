@@ -181,9 +181,14 @@ function buildShell() {
 }
 
 function refreshCounts() {
+  const player = isPlayer();
   for (const [view, ref] of Object.entries(navItems)) {
     if (ref.countColl && ref.countEl) {
-      const n = store.all(ref.countColl).length;
+      // Player mode's "My Characters" badge must match the player home: own
+      // (non-seed) PCs only — not the seeded NPCs/demo party.
+      const n = (player && ref.countColl === 'characters')
+        ? store.all('characters').filter((c) => (c.kind || 'pc') === 'pc' && !c._seed).length
+        : store.all(ref.countColl).length;
       ref.countEl.textContent = n ? String(n) : '';
     }
   }
@@ -285,12 +290,19 @@ function openPalette() {
 }
 
 function buildPaletteIndex() {
+  const player = isPlayer();
   const idx = [];
-  for (const item of NAV) {
+  // Only index nav the current role can actually reach (mountView guards GM
+  // routes, but Player mode shouldn't advertise GM tooling in search either).
+  for (const item of navList()) {
     if (item.section) continue;
     idx.push({ text: item.label, cat: 'Go to', icon: item.icon, go: () => router.go(item.view) });
   }
   idx.push({ text: 'Settings', cat: 'Go to', icon: 'gear', go: () => router.go('settings') });
+  if (player) {
+    for (const ch of store.all('characters')) if ((ch.kind || 'pc') === 'pc' && !ch._seed) idx.push({ text: ch.name || 'Unnamed', cat: 'Character', icon: 'mask', go: () => router.go('characters', ch.id) });
+    return idx;
+  }
   for (const c of store.all('campaigns')) idx.push({ text: c.name || 'Untitled campaign', cat: 'Campaign', icon: 'flag', go: () => router.go('campaigns', c.id) });
   for (const s of store.all('storylines')) idx.push({ text: s.name || 'Untitled storyline', cat: 'Storyline', icon: 'scroll', go: () => router.go('storylines', s.id) });
   for (const ch of store.all('characters')) idx.push({ text: ch.name || 'Unnamed', cat: ch.kind === 'npc' ? 'NPC' : 'PC', icon: 'mask', go: () => router.go('characters', ch.id) });

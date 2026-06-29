@@ -1,0 +1,84 @@
+/* ── Cold Survival Terminal — signature polish (loaded last; wins style ties).
+   Identity layer: field-equipment typography, a "signal" scan bar on the active
+   nav item, crisp card edges, monospace tags. Restrained for readability. */
+
+/* Brand: condensed, tracked, cold */
+.brand-name { font-family: var(--font-display); letter-spacing: .12em; text-transform: uppercase; font-weight: 700; }
+.brand-name .x { color: var(--accent); text-shadow: 0 0 12px color-mix(in srgb, var(--accent) 60%, transparent); }
+
+/* Sidebar / topbar framing */
+.sidebar { border-right: 1px solid var(--line); background: linear-gradient(180deg, var(--bg-0), var(--bg)); }
+.topbar { border-bottom: 1px solid var(--line); background: linear-gradient(180deg, var(--panel), var(--bg)); box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 14%, transparent); }
+
+/* Section labels read like a field readout */
+.nav-section-label {
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .18em;
+  font-size: 10px; color: var(--text-faint);
+}
+.nav-section-label::before { content: '// '; opacity: .5; }
+
+/* Nav items + the "signal" scan bar on the active one */
+.nav-item { position: relative; border-radius: var(--r-1); transition: background .12s var(--ease), color .12s var(--ease); }
+.nav-item:hover { background: color-mix(in srgb, var(--accent) 7%, transparent); }
+.nav-item.active { background: color-mix(in srgb, var(--accent) 13%, transparent); color: var(--text); }
+.nav-item.active::before {
+  content: ''; position: absolute; left: -2px; top: 7px; bottom: 7px; width: 3px;
+  background: var(--accent); border-radius: 2px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 80%, transparent);
+}
+.nav-item.active .icon { color: var(--accent); }
+.nav-count { font-family: var(--font-mono); font-size: 10px; }
+
+/* Cards: crisp cold edges + a hairline top highlight (the "panel" look) */
+.card, .entity-card, .side-card, .panel {
+  border: 1px solid var(--line);
+  box-shadow: inset 0 1px 0 rgba(220,235,245,.04), var(--shadow-1);
+}
+.entity-card.clickable:hover { border-color: color-mix(in srgb, var(--accent) 55%, var(--line)); }
+.side-card > h4, .panel > h4 {
+  font-family: var(--font-display); text-transform: uppercase; letter-spacing: .08em;
+  font-size: 12.5px; color: var(--text-dim);
+}
+
+/* Headings get a faint cold tracking */
+h2 { letter-spacing: .015em; }
+.section-title h2 { position: relative; }
+
+/* Tags as terminal readouts */
+.chip, .badge {
+  font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .05em;
+  font-size: 10px; line-height: 1.5;
+}
+
+/* Active-system switcher: a steady "signal" dot */
+.sys-switch { border: 1px solid var(--line); background: var(--bg-1); }
+.sys-switch:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.sys-switch-dot { box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent); }
+
+/* Notices read like an emergency readout */
+.notice { border-left: 2px solid color-mix(in srgb, var(--accent) 50%, var(--line)); }
+
+/* Primary buttons: crisp, a touch of cold signal (fill/contrast set in components.css) */
+.btn-primary { box-shadow: inset 0 1px 0 rgba(255,255,255,.1); }
+
+/* ── Page texture: a faint engineering grid + a cold glow at the top, BEHIND content
+   (cards sit on their own surfaces, so this only tints the negative space). ── */
+.view {
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(135% 95% at 50% -18%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 58%),
+    linear-gradient(rgba(126,150,175,.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(126,150,175,.026) 1px, transparent 1px);
+  background-size: 100% 100%, 34px 34px, 34px 34px;
+}
+
+/* Buttons feel more alive: a cold accent-tinted edge on hover for neutral buttons */
+.btn:hover { border-color: color-mix(in srgb, var(--accent) 38%, var(--line)); }
+
+/* Menus: colored hover, danger items read red, icons pick up the accent */
+.menu-item:hover { background: color-mix(in srgb, var(--accent) 15%, transparent); }
+.menu-item .icon { color: var(--text-mute); }
+.menu-item:hover .icon { color: var(--accent); }
+.menu-item.danger { color: var(--bad); }
+.menu-item.danger .icon, .menu-item.danger:hover .icon { color: var(--bad); }
+.menu-item.danger:hover { background: color-mix(in srgb, var(--bad) 15%, transparent); }
