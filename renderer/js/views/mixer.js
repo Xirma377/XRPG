@@ -4,6 +4,7 @@ import { button, iconButton, empty, badge, chip, modal, confirm, toast, field, i
 import store from '../store.js';
 import shell from '../shell.js';
 import audio, { INSTRUMENTS, ONESHOTS } from '../audio-engine.js';
+import { wireSfxToggle } from '../sfx.js';
 
 let rafId = null;
 let unsub = [];
@@ -102,7 +103,7 @@ export async function render() {
     const pad = el('div.cue-pad');
     pad.appendChild(icon(o.icon, 20, { class: 'ci' }));
     pad.appendChild(el('div.cn', o.name));
-    pad.addEventListener('click', () => { audio.oneShot(o.id); flash(pad); });
+    wireSfxToggle(pad, o.id, () => { audio.oneShot(o.id, 0.6, o.id); flash(pad); }, unsub);
     synthBoard.appendChild(pad);
   });
   left.appendChild(synthBoard);
@@ -257,11 +258,11 @@ function sfxPad(t) {
   pad.appendChild(icon('bolt', 20, { class: 'ci' }));
   pad.appendChild(el('div.cn', t.name));
   pad.appendChild(el('div.ck', LIC_SHORT(t.license)));
-  pad.addEventListener('click', async () => {
+  wireSfxToggle(pad, t.id, async () => {
     flash(pad);
-    try { const res = await window.xrpg.audio.fetch(t); cachedSet.add(t.id); audio.oneShotFile(res.url); }
+    try { const res = await window.xrpg.audio.fetch(t); cachedSet.add(t.id); audio.oneShotFile(res.url, 1, t.id); }
     catch (e) { toast('SFX failed: ' + e.message, { type: 'error' }); }
-  });
+  }, unsub);
   return pad;
 }
 function filePad(f) {

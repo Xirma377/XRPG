@@ -18,6 +18,7 @@ import { portraitNode } from '../portrait.js';
 import { adjustReward, rewardStatOf, useItem } from '../progress.js';
 import discord from '../discord.js';
 import { openSessionWizard } from './session-wizard.js';
+import { wireSfxToggle } from '../sfx.js';
 
 let rec = null;
 let unsub = [];
@@ -255,12 +256,32 @@ function buildRecap(working, campaign, saveNow) {
   const th = el('div.row.between');
   th.appendChild(el('h3', 'Transcript'));
   const tActions = el('div.row.gap-2');
-  tActions.appendChild(button('Transcribe recording', { size: 'sm', icon: 'mic', onClick: async () => {
-    if (!working.audioMediaId) { toast('No recording to transcribe', { type: 'warn' }); return; }
+  const hasDiscordTracks = (working.discordRecordings || []).length > 0;
+  tActions.appendChild(button(hasDiscordTracks ? 'Transcribe (speaker-labeled)' : 'Transcribe recording', { size: 'sm', icon: 'mic', onClick: async () => {
     if (!(await store.hasSecret('transcription'))) { toast('Set a transcription API key in Settings → AI', { type: 'warn' }); return; }
+    // Online (Discord): transcribe each speaker's own track and interleave them by
+    // time → a "Name: …" transcript. Otherwise fall back to the single mixed recording.
+    if (hasDiscordTracks) {
+      toast('Transcribing each speaker…', { timeout: 2500 });
+      const r = await window.xrpg.discord.transcribeRecording(working.discordRecordings).catch((e) => ({ ok: false, reason: e.message }));
+      if (!r.ok) { toast('Transcription failed: ' + (r.reason || ''), { type: 'error' }); return; }
+      working.transcript = r.transcript || working.transcript; transcriptT.value = working.transcript || ''; await saveNow();
+      toast('Speaker-labeled transcript ready', { type: 'success' });
+      return;
+    }
+    if (!working.audioMediaId) { toast('No recording to transcribe', { type: 'warn' }); return; }
     toast('Transcribing…', { timeout: 1500 });
-    try { const r = await window.xrpg.transcribe.whisper({ kind: 'audio', mediaId: working.audioMediaId }); working.transcript = r.text; transcriptT.value = r.text; await saveNow(); toast('Transcribed', { type: 'success' }); }
-    catch (e) { toast('Transcription failed: ' + e.message, { type: 'error' }); }
+    try {
+      const r = await window.xrpg.transcribe.whisper({ kind: 'audio', mediaId: working.audioMediaId });
+      // If the transcription endpoint diarizes (per-segment speaker), label it; OpenAI
+      // Whisper does not, so this falls back to plain text. (Per-speaker separation is
+      // guaranteed via the Discord per-user recordings.)
+      let text = r.text || '';
+      if (Array.isArray(r.segments) && r.segments.some((s) => s.speaker != null || s.speaker_id != null)) {
+        text = r.segments.map((s) => `Speaker ${s.speaker != null ? s.speaker : s.speaker_id}: ${(s.text || '').trim()}`).join('\n');
+      }
+      working.transcript = text; transcriptT.value = text; await saveNow(); toast('Transcribed', { type: 'success' });
+    } catch (e) { toast('Transcription failed: ' + e.message, { type: 'error' }); }
   } }));
   th.appendChild(tActions);
   transCard.appendChild(th);
@@ -587,11 +608,13 @@ function buildAudio() {
   card.appendChild(sfxRow);
   window.xrpg.audio.manifest().then((man) => {
     (man.tracks || []).filter((t) => t.category === 'sfx').slice(0, 10).forEach((t) => {
-      sfxRow.appendChild(button(t.name, { size: 'sm', variant: 'outline', onClick: async () => { try { const r = await window.xrpg.audio.fetch(t); audio.oneShotFile(r.url); } catch { toast('SFX failed', { type: 'error' }); } } }));
+      const b = button(t.name, { size: 'sm', variant: 'outline' });
+      wireSfxToggle(b, t.id, async () => { try { const r = await window.xrpg.audio.fetch(t); audio.oneShotFile(r.url, 1, t.id); } catch { toast('SFX failed', { type: 'error' }); } }, unsub);
+      sfxRow.appendChild(b);
     });
   }).catch(() => {});
   const synthRow = el('div.row.wrap.gap-1', { style: { marginTop: '6px' } });
-  ['impact', 'thunder', 'gunshot', 'alert', 'heartbeat-spike'].forEach((o) => synthRow.appendChild(iconButton('bolt', { size: 15, title: 'synth: ' + o, onClick: () => audio.oneShot(o) })));
+  ['impact', 'thunder', 'gunshot', 'alert', 'heartbeat-spike'].forEach((o) => { const b = iconButton('bolt', { size: 15, title: 'synth: ' + o }); wireSfxToggle(b, o, () => audio.oneShot(o, 0.6, o), unsub); synthRow.appendChild(b); });
   card.appendChild(synthRow);
   card.appendChild(button('Open Mixer', { size: 'sm', variant: 'ghost', icon: 'music', onClick: () => router.go('mixer') }));
   return card;

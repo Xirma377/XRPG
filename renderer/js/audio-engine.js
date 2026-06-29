@@ -36,6 +36,9 @@ export const ONESHOTS = [
   { id: 'chime', name: 'Soft Chime', icon: 'spark' },
 ];
 
+// Approx tail length (seconds) of each synth one-shot, for auto-clearing its bus.
+const ONESHOT_DUR = { impact: 1.8, boom: 1.8, gunshot: 0.35, thunder: 2.1, glass: 0.4, door: 0.3, alert: 1.7, 'static-burst': 0.5, dice: 0.5, scream: 1, 'heartbeat-spike': 0.9, chime: 1.4 };
+
 class AudioEngine extends Emitter {
   constructor() {
     super();
@@ -43,6 +46,7 @@ class AudioEngine extends Emitter {
     this.master = null;
     this.limiter = null;
     this.channels = new Map(); // id -> channel
+    this.shots = new Map(); // id -> { stop, key } for one-shot SFX (so they can be toggled/stopped)
     this.started = false;
   }
 
@@ -184,22 +188,31 @@ class AudioEngine extends Emitter {
   pauseAll() { for (const id of this.channels.keys()) this.pause(id); }
 
   // One-shot playback of a file URL (e.g. a downloaded SFX), auto-cleaned.
-  oneShotFile(url, vol = 1) {
+  oneShotFile(url, vol = 1, key = null) {
     this.ensure();
     const el = new Audio(url);
     el.crossOrigin = 'anonymous';
     let node;
-    try { node = this.ctx.createMediaElementSource(el); } catch { el.play().catch(() => {}); return; }
+    try { node = this.ctx.createMediaElementSource(el); } catch { el.play().catch(() => {}); return null; }
     const g = this.ctx.createGain(); g.gain.value = vol;
     node.connect(g); g.connect(this.master);
+    const id = uid('shot');
     let done = false;
-    const cleanup = () => { if (done) return; done = true; clearTimeout(safety); try { node.disconnect(); g.disconnect(); } catch {} try { el.pause(); el.src = ''; } catch {} };
+    const cleanup = () => { if (done) return; done = true; clearTimeout(safety); try { node.disconnect(); g.disconnect(); } catch {} try { el.pause(); el.src = ''; } catch {} if (this.shots.delete(id)) this.emit('shotend', { id, key }); };
     el.addEventListener('ended', cleanup);
     el.addEventListener('error', cleanup);
     // Safety net: if 'ended' never fires (stalled stream / looping), force cleanup.
-    const safety = setTimeout(cleanup, Math.min(60000, (el.duration && isFinite(el.duration) ? el.duration * 1000 + 1000 : 30000)));
+    const safety = setTimeout(cleanup, Math.min(300000, (el.duration && isFinite(el.duration) ? el.duration * 1000 + 1000 : 120000)));
     el.play().catch(() => cleanup());
+    this.shots.set(id, { stop: cleanup, key });
+    this.emit('shotstart', { id, key });
+    return id;
   }
+
+  // ---- One-shot tracking (so soundboard SFX can be toggled / stopped) ----
+  stopShot(id) { const s = this.shots.get(id); if (s) s.stop(); }
+  activeShotFor(key) { for (const [id, s] of this.shots) if (key != null && s.key === key) return id; return null; }
+  stopAllShots() { for (const s of [...this.shots.values()]) { try { s.stop(); } catch {} } }
 
   async playFile(ch) {
     const url = ch.url || `xrpg://media/audio/${ch.source}`;
@@ -340,9 +353,12 @@ class AudioEngine extends Emitter {
   }
 
   // ---- One-shots ----
-  oneShot(kind, vol = 0.6) {
+  oneShot(kind, vol = 0.6, key = null) {
     this.ensure();
-    const ctx = this.ctx, t = ctx.currentTime, dest = this.master;
+    const ctx = this.ctx, t = ctx.currentTime;
+    // Route the whole one-shot through its own bus so disconnecting it stops the sound.
+    const bus = ctx.createGain(); bus.gain.value = 1; bus.connect(this.master);
+    const dest = bus;
     const noise = (sec, color) => { const s = ctx.createBufferSource(); s.buffer = this.noiseBuffer(sec, color); return s; };
     switch (kind) {
       case 'impact': case 'boom': {
@@ -388,19 +404,28 @@ class AudioEngine extends Emitter {
         break;
       }
       case 'heartbeat-spike': {
-        this._thump(t, vol * 0.4, 50); this._thump(t + 0.22, vol * 0.3, 50); this._thump(t + 0.5, vol * 0.4, 52); this._thump(t + 0.68, vol * 0.3, 52);
+        this._thump(t, vol * 0.4, 50, dest); this._thump(t + 0.22, vol * 0.3, 50, dest); this._thump(t + 0.5, vol * 0.4, 52, dest); this._thump(t + 0.68, vol * 0.3, 52, dest);
         break;
       }
       case 'chime': {
         [523, 659, 784].forEach((f, i) => { const o = ctx.createOscillator(); o.type = 'sine'; o.frequency.value = f; const g = ctx.createGain(); const st = t + i * 0.08; g.gain.setValueAtTime(0, st); g.gain.linearRampToValueAtTime(vol * 0.18, st + 0.02); g.gain.exponentialRampToValueAtTime(0.001, st + 1.2); o.connect(g); g.connect(dest); o.start(st); o.stop(st + 1.3); });
         break;
       }
-      default: this._thump(t, vol, 60);
+      default: this._thump(t, vol, 60, dest);
     }
+    // Track the shot; auto-clean (disconnect the bus) shortly after it finishes.
+    const id = uid('shot');
+    const dur = ONESHOT_DUR[kind] != null ? ONESHOT_DUR[kind] : 2;
+    let stopped = false;
+    const stop = () => { if (stopped) return; stopped = true; clearTimeout(autoEnd); try { bus.disconnect(); } catch {} if (this.shots.delete(id)) this.emit('shotend', { id, key }); };
+    const autoEnd = setTimeout(stop, dur * 1000 + 300);
+    this.shots.set(id, { stop, key });
+    this.emit('shotstart', { id, key });
     this.emit('oneshot', kind);
+    return id;
   }
 
-  stopAll() { for (const id of this.channels.keys()) this.stop(id); }
+  stopAll() { for (const id of this.channels.keys()) this.stop(id); this.stopAllShots(); }
 }
 
 export const audio = new AudioEngine();

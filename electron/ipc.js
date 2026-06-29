@@ -126,6 +126,7 @@ function registerIpc({ ipcMain, store, ai, transcribe, updater, discord, getWind
       filename: mediaId,
       model: settings.transcriptionModel || 'whisper-1',
       baseUrl: settings.transcriptionBaseUrl,
+      responseFormat: 'verbose_json', // returns .segments (+ .speaker if the endpoint diarizes)
     });
   });
 

@@ -27,6 +27,10 @@
 .cue-pad .ci { color: var(--accent); }
 .cue-pad .cn { font-size: 12px; font-weight: 600; line-height: 1.2; }
 .cue-pad .ck { font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+/* A one-shot SFX that's currently playing (click again to stop). */
+.cue-pad.playing { border-color: var(--good); background: color-mix(in srgb, var(--good) 18%, transparent); box-shadow: 0 0 0 1px var(--good); }
+.cue-pad.playing .ci, .cue-pad.playing .cn { color: var(--good); }
+.btn.playing { border-color: var(--good); color: var(--good); background: color-mix(in srgb, var(--good) 12%, transparent); }
 
 .preset-pill { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--bg-1); border: 1px solid var(--line-soft); border-radius: var(--r-1); cursor: pointer; margin-bottom: 6px; }
 .preset-pill:hover { border-color: var(--accent); }

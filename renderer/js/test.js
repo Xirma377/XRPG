@@ -260,6 +260,20 @@ async function run() {
     ok('audio: removeChannel clears them', audio.channels.size === before);
   } catch (e) { ok('audio: channel ids', false, e.message); }
 
+  // ---- audio: one-shot SFX are trackable + stoppable (Stop All / toggle) ----
+  try {
+    const { audio } = await import('./audio-engine.js');
+    const id = audio.oneShot('impact', 0.4, 'impact');
+    ok('sfx: oneShot returns a tracked id', !!id && audio.activeShotFor('impact') === id);
+    audio.stopShot(id);
+    ok('sfx: stopShot stops it', audio.activeShotFor('impact') === null);
+    const idf = audio.oneShot('door', 0.4, 'door');
+    const ids2 = audio.oneShot('alert', 0.4, 'alert');
+    ok('sfx: two shots tracked', !!idf && !!ids2 && audio.shots.size >= 2);
+    audio.stopAll();
+    ok('sfx: stopAll stops all shots', audio.activeShotFor('door') === null && audio.activeShotFor('alert') === null);
+  } catch (e) { ok('sfx: one-shot tracking', false, e.message); }
+
   // ---- report ----
   const total = results.length;
   const passed = results.filter((r) => r.pass).length;
