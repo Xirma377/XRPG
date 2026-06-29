@@ -1,37 +1,51 @@
-// Live "broadcast app audio to Discord": tap the audio engine's master output,
-// record it as WebM/Opus via MediaRecorder, and stream the chunks to the bot,
-// which feeds them straight into the voice channel. Covers the soundboard, the
-// mixer, and every format — because we capture the decoded output, not files.
+// Live "broadcast app audio to Discord": tap the audio engine's master output and
+// stream it to the bot as a CONTINUOUS 48 kHz stereo PCM feed (not MediaRecorder/WebM,
+// which delivers bursty container chunks that stutter). The bot frames + Opus-encodes
+// it. Covers the soundboard, mixer, every format — because we capture decoded output.
 import audio from './audio-engine.js';
 import discord from './discord.js';
 
-let recorder = null;
-let dest = null;
 let active = false;
+let captureDest = null;   // MediaStreamDestination in the engine context
+let capCtx = null;        // a 48 kHz context that resamples the captured stream
+let srcNode = null;
+let proc = null;
+let capSink = null;
 
 export function isBroadcasting() { return active; }
 
 export async function startAppBroadcast() {
   if (active) return { ok: true };
-  active = true; // claim immediately so a re-entrant call can't build a second recorder
+  active = true;
   audio.ensure();
   if (!audio.ctx || !audio.master) { active = false; return { ok: false, reason: 'audio-not-started' }; }
-  if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-    active = false; return { ok: false, reason: 'unsupported', detail: 'This build can’t capture WebM/Opus audio.' };
-  }
   const r = await discord.liveStart().catch((e) => ({ ok: false, reason: e.message }));
   if (!r || r.ok === false) { active = false; return r || { ok: false, reason: 'liveStart-failed' }; }
   try {
-    dest = audio.ctx.createMediaStreamDestination();
-    audio.master.connect(dest); // tap master in parallel with the speakers
-    recorder = new MediaRecorder(dest.stream, { mimeType: 'audio/webm;codecs=opus', audioBitsPerSecond: 96000 });
-    recorder.ondataavailable = async (e) => {
-      if (!active || !e.data || !e.data.size) return;
-      try { const ab = await e.data.arrayBuffer(); discord.liveChunk(new Uint8Array(ab)); } catch (err) {}
+    // tap master (parallel to the speakers) → a MediaStream → a 48k context that
+    // resamples it → a ScriptProcessor that hands us 48k stereo PCM.
+    captureDest = audio.ctx.createMediaStreamDestination();
+    audio.master.connect(captureDest);
+    const AC = window.AudioContext || window.webkitAudioContext;
+    capCtx = new AC({ sampleRate: 48000 });
+    srcNode = capCtx.createMediaStreamSource(captureDest.stream);
+    proc = capCtx.createScriptProcessor(2048, 2, 2);
+    capSink = capCtx.createMediaStreamDestination(); // keeps proc processing, no speaker output
+    srcNode.connect(proc);
+    proc.connect(capSink);
+    proc.onaudioprocess = (e) => {
+      if (!active) return;
+      const inL = e.inputBuffer.getChannelData(0);
+      const inR = e.inputBuffer.numberOfChannels > 1 ? e.inputBuffer.getChannelData(1) : inL;
+      const n = inL.length;
+      const pcm = new Int16Array(n * 2);
+      for (let i = 0; i < n; i++) {
+        let l = inL[i] * 32767; if (l > 32767) l = 32767; else if (l < -32768) l = -32768;
+        let rr = inR[i] * 32767; if (rr > 32767) rr = 32767; else if (rr < -32768) rr = -32768;
+        pcm[2 * i] = l; pcm[2 * i + 1] = rr;
+      }
+      discord.liveChunk(new Uint8Array(pcm.buffer));
     };
-    recorder.onerror = () => { stopAppBroadcast(); };
-    recorder.start(100); // 100ms chunks → smoother feed, smaller gaps
-    active = true;
     return { ok: true };
   } catch (e) {
     await stopAppBroadcast();
@@ -41,10 +55,12 @@ export async function startAppBroadcast() {
 
 export async function stopAppBroadcast() {
   active = false;
-  try { if (recorder && recorder.state !== 'inactive') recorder.stop(); } catch (e) {}
-  recorder = null;
-  try { if (dest && audio.master) audio.master.disconnect(dest); } catch (e) {}
-  dest = null;
+  try { if (proc) { proc.onaudioprocess = null; proc.disconnect(); } } catch (e) {}
+  try { if (srcNode) srcNode.disconnect(); } catch (e) {}
+  try { if (capSink) capSink.disconnect(); } catch (e) {}
+  try { if (captureDest && audio.master) audio.master.disconnect(captureDest); } catch (e) {}
+  try { if (capCtx && capCtx.state !== 'closed') await capCtx.close(); } catch (e) {}
+  proc = srcNode = capSink = captureDest = capCtx = null;
   try { await discord.liveStop(); } catch (e) {}
   return { ok: true };
 }

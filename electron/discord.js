@@ -52,9 +52,9 @@ let conn = null; // voice connection
 let reconnecting = false; // guards the Disconnected recovery race
 let voiceInfo = null; // { guildId, channelId, channelName }
 let player = null; // audio player for broadcast
-let liveStream = null; // Readable fed by the renderer's captured app audio (WebM/Opus)
-let liveResource = null, livePlaying = false, liveChunkCount = 0;
-const LIVE_PREBUFFER_CHUNKS = 5; // ~500ms jitter buffer before playback (chunks are ~100ms)
+let liveStream = null; // Readable fed by the renderer's captured app audio (48k stereo s16le PCM)
+let liveResource = null, livePlaying = false, liveBytes = 0;
+const LIVE_PREBUFFER_BYTES = (48000 * 2 * 2 * 0.4) | 0; // ~400ms of 48k stereo PCM jitter buffer
 let speakingSet = new Set();
 let rec = null; // active recording state
 let pendingSlash = new Map(); // requestId -> { interaction, timer }
@@ -762,50 +762,49 @@ function ensurePlayer() {
 
 function stopBroadcast() {
   if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
-  liveResource = null; livePlaying = false; liveChunkCount = 0;
+  liveResource = null; livePlaying = false; liveBytes = 0;
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
   send('broadcastState', { status: 'idle' });
 }
 
 // ---------------------------------------------------------------------------
 // Live broadcast: the renderer captures the WHOLE app audio output (mixer +
-// soundboard + everything) as WebM/Opus and streams chunks here; we feed them
-// straight to Discord. Covers every format — no ffmpeg, no per-file decoding.
+// soundboard + everything) as a continuous 48k stereo PCM feed; @discordjs/voice
+// frames + Opus-encodes + paces it (StreamType.Raw). Covers every format, no ffmpeg.
 // ---------------------------------------------------------------------------
 
 function liveBroadcastStart() {
   if (!conn || !voiceInfo) return { ok: false, reason: 'not-in-voice' };
   liveBroadcastStop();
   try {
-    liveStream = new Readable({ read() {} });
+    liveStream = new Readable({ read() {}, highWaterMark: 1 << 20 });
     liveStream.on('error', (e) => { log('liveStream error', e && e.message); }); // never let a stream error crash main
-    liveResource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.WebmOpus });
+    liveResource = voice.createAudioResource(liveStream, { inputType: voice.StreamType.Raw }); // s16le 48k stereo PCM
     ensurePlayer();
-    livePlaying = false; liveChunkCount = 0;
+    livePlaying = false; liveBytes = 0;
     return { ok: true }; // playback starts once the jitter buffer fills (see liveBroadcastChunk)
   } catch (e) { liveStream = null; liveResource = null; return { ok: false, reason: 'failed', detail: e.message }; }
 }
 
 function liveBroadcastChunk(chunk) {
-  // Guard against push-after-EOF (a late chunk arriving after stop) — that would emit
-  // an async error event and, without a handler, crash the main process.
+  // Guard against push-after-EOF (a late chunk after stop) — without a handler that
+  // would emit an async error event and crash the main process.
   if (!liveStream || liveStream.readableEnded || liveStream.destroyed || !chunk) return false;
-  // Safety cap: if Discord stalls and the buffer balloons, abandon the broadcast
-  // rather than grow unbounded (can't drop individual chunks — it'd corrupt the WebM).
-  if (liveStream.readableLength > 8 * 1024 * 1024) { liveBroadcastStop(); return false; }
-  try { liveStream.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)); } catch (e) {}
-  // Build a jitter cushion before starting playback, so the player always has frames
-  // ready and the audio doesn't stutter / cut in and out.
+  if (liveStream.readableLength > 8 * 1024 * 1024) { liveBroadcastStop(); return false; } // stall safety cap
+  const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+  try { liveStream.push(buf); } catch (e) {}
+  // Build a ~400ms jitter cushion before playback so the player never starves
+  // (which is what made the audio stutter / cut in and out).
   if (!livePlaying && liveResource && player) {
-    liveChunkCount++;
-    if (liveChunkCount >= LIVE_PREBUFFER_CHUNKS) { livePlaying = true; player.play(liveResource); }
+    liveBytes += buf.length;
+    if (liveBytes >= LIVE_PREBUFFER_BYTES) { livePlaying = true; player.play(liveResource); }
   }
   return true;
 }
 
 function liveBroadcastStop() {
   if (liveStream) { try { liveStream.push(null); } catch (e) {} liveStream = null; }
-  liveResource = null; livePlaying = false; liveChunkCount = 0;
+  liveResource = null; livePlaying = false; liveBytes = 0;
   if (player) { try { player.removeAllListeners(); player.stop(true); } catch (e) {} player = null; }
   send('broadcastState', { status: 'idle' });
   return { ok: true };

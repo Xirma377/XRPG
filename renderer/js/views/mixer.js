@@ -42,7 +42,7 @@ export async function render() {
   const masterBar = el('div.master-bar');
   masterBar.appendChild(icon('sliders', 18));
   masterBar.appendChild(el('span.mlabel', 'Master'));
-  const masterRange = range({ min: 0, max: 1, step: 0.01, value: audio.master ? audio.master.gain.value : 0.9, showValue: true, format: (v) => Math.round(v * 100) + '%', onInput: (v) => { audio.ensure(); audio.setMaster(v); } });
+  const masterRange = range({ min: 0, max: 1, step: 0.01, value: audio.master ? audio.master.gain.value / 2 : 0.9, showValue: true, format: (v) => Math.round(v * 100) + '%', onInput: (v) => { audio.ensure(); audio.setMaster(v); } });
   masterRange.style.flex = '1';
   masterBar.appendChild(masterRange);
   // The audio engine starts automatically on first interaction (browsers require

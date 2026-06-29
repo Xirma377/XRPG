@@ -54,7 +54,7 @@ class AudioEngine extends Emitter {
     this.limiter.threshold.value = -6; this.limiter.knee.value = 6; this.limiter.ratio.value = 12;
     this.limiter.attack.value = 0.003; this.limiter.release.value = 0.25;
     this.master = this.ctx.createGain();
-    this.master.gain.value = 0.9;
+    this.master.gain.value = 1.8; // slider 0–100% maps to 0–2.0 gain (limiter tames peaks)
     this.master.connect(this.limiter);
     this.limiter.connect(this.ctx.destination);
     this.started = true;
@@ -62,7 +62,7 @@ class AudioEngine extends Emitter {
     return this.ctx;
   }
 
-  setMaster(v) { if (this.master) this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.05); }
+  setMaster(v) { if (this.master) this.master.gain.setTargetAtTime(v * 2, this.ctx.currentTime, 0.05); } // 100% slider = 2.0 gain
 
   noiseBuffer(sec, color = 'white') {
     const len = Math.floor(this.ctx.sampleRate * sec);
